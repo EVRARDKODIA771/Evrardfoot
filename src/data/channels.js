@@ -15,7 +15,7 @@ export const channels = [
     streamUrl: "https://bolaloca.my/player/3/1",
     status: "FHD",
   },
-   {
+  {
     id: 3,
     name: "Bein Sport 2",
     category: "Sport",
@@ -23,7 +23,7 @@ export const channels = [
     streamUrl: "https://bolaloca.my/player/3/2",
     status: "FHD",
   },
-   {
+  {
     id: 4,
     name: "Bein Sport 3",
     category: "Sport",
@@ -39,7 +39,7 @@ export const channels = [
     streamUrl: "https://bolaloca.my/player/3/4",
     status: "FHD",
   },
-   {
+  {
     id: 6,
     name: "Bein Sport 5 Max",
     category: "Sport",
@@ -47,7 +47,7 @@ export const channels = [
     streamUrl: "https://bolaloca.my/player/3/5",
     status: "FHD",
   },
-    {
+  {
     id: 7,
     name: "Bein Sport 6 Max",
     category: "Sport",
@@ -55,7 +55,7 @@ export const channels = [
     streamUrl: "https://bolaloca.my/player/3/6",
     status: "FHD",
   },
-   {
+  {
     id: 8,
     name: "Bein Sport 6 Max",
     category: "Sport",
@@ -72,81 +72,79 @@ export const channels = [
     status: "HD",
   },
   {
+    id: 10,
+    name: "Canal + Foot",
+    category: "Sport",
+    cover: "/logo/foot.png",
+    streamUrl: "https://bolaloca.my/player/3/12",
+    status: "HD",
+  },
+  {
     id: 11,
-    name: "Canal + Sport ",
+    name: "Canal + Sport",
     category: "Sport",
     cover: "/logo/+sport.png",
     streamUrl: "https://bolaloca.my/player/3/13",
     status: "HD",
   },
   {
-    id: 13,
-    name: "Canal + 360 ",
+    id: 12,
+    name: "Canal + 360",
     category: "Sport",
     cover: "/logo/Canal+Sport_360.png",
     streamUrl: "https://bolaloca.my/player/3/14",
     status: "HD",
   },
-    {
-    id: 10,
-    name: "Canal + Foot ",
-    category: "Sport",
-    cover: "/logo/foot.png",
-    streamUrl: "https://bolaloca.my/player/3/12",
-    status: "HD",
-  },
-    {
-    id: 14,
+  {
+    id: 13,
     name: "Eurosport 1",
     category: "Sport",
     cover: "/logo/eurosport.jpg",
     streamUrl: "https://bolaloca.my/player/3/15",
     status: "HD",
   },
-    {
-    id: 15,
+  {
+    id: 14,
     name: "Eurosport 2",
     category: "Sport",
     cover: "/logo/eurosport.jpg",
     streamUrl: "https://bolaloca.my/player/3/16",
     status: "HD",
   },
-    {
-    id: 16,
+  {
+    id: 15,
     name: "RMC SPORT 1",
     category: "Sport",
     cover: "/logo/RMC Sport.png",
     streamUrl: "https://bolaloca.my/player/3/17",
     status: "HD",
   },
-    {
-    id: 17,
+  {
+    id: 16,
     name: "L'EQUIPE",
     category: "Sport",
     cover: "/logo/L'Equipe_logo.png",
     streamUrl: "https://bolaloca.my/player/3/19",
     status: "HD",
   },
-    {
-    id: 18,
+  {
+    id: 17,
     name: "Automoto",
     category: "Sport",
     cover: "/logo/automoto.jpg",
     streamUrl: "https://bolaloca.my/player/3/23",
     status: "HD",
   },
-
-    {
-    id: 19,
+  {
+    id: 18,
     name: "TF1",
     category: "Sport",
     cover: "/logo/TF1.png",
     streamUrl: "https://bolaloca.my/player/3/24",
     status: "HD",
   },
-
-   {
-    id: 20,
+  {
+    id: 19,
     name: "TMC",
     category: "Sport",
     cover: "/logo/TMC_logo_2016.svg.png",
@@ -154,16 +152,15 @@ export const channels = [
     status: "HD",
   },
   {
-    id: 21,
+    id: 20,
     name: "M6",
     category: "Sport",
     cover: "/logo/M6.png",
     streamUrl: "https://bolaloca.my/player/3/26",
     status: "HD",
   },
-
   {
-    id: 22,
+    id: 21,
     name: "NRJ12",
     category: "Sport",
     cover: "/logo.png",
@@ -171,15 +168,15 @@ export const channels = [
     status: "HD",
   },
   {
-    id: 23,
+    id: 22,
     name: "FRANCE.TV 1",
     category: "Sport",
     cover: "/logo.png",
     streamUrl: "https://bolaloca.my/player/3/28",
     status: "HD",
   },
-   {
-    id: 24,
+  {
+    id: 23,
     name: "FRANCE.TV 2",
     category: "Sport",
     cover: "/logo.png",
@@ -187,15 +184,15 @@ export const channels = [
     status: "HD",
   },
   {
-    id: 25,
+    id: 24,
     name: "FRANCE.TV 3",
     category: "Sport",
     cover: "/logo.png",
     streamUrl: "https://bolaloca.my/player/3/30",
     status: "HD",
   },
-   {
-    id: 26,
+  {
+    id: 25,
     name: "FRANCE.TV 4",
     category: "Sport",
     cover: "/logo.png",

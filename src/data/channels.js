@@ -71,14 +71,6 @@ export const channels = [
     streamUrl: "https://bolaloca.my/player/3/11",
     status: "HD",
   },
-   {
-    id: 10,
-    name: "Canal + Foot ",
-    category: "Sport",
-    cover: "/logo/foot.png",
-    streamUrl: "https://bolaloca.my/player/3/12",
-    status: "HD",
-  },
   {
     id: 11,
     name: "Canal + Sport ",
@@ -93,6 +85,14 @@ export const channels = [
     category: "Sport",
     cover: "/logo/Canal+Sport_360.png",
     streamUrl: "https://bolaloca.my/player/3/14",
+    status: "HD",
+  },
+    {
+    id: 10,
+    name: "Canal + Foot ",
+    category: "Sport",
+    cover: "/logo/foot.png",
+    streamUrl: "https://bolaloca.my/player/3/12",
     status: "HD",
   },
     {

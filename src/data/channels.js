@@ -88,14 +88,6 @@ export const channels = [
     status: "HD",
   },
   {
-    id: 12,
-    name: "Canal + 360 ",
-    category: "Sport",
-    cover: "/logo.png",
-    streamUrl: "https://bolaloca.my/player/3/14",
-    status: "HD",
-  },
-  {
     id: 13,
     name: "Canal + 360 ",
     category: "Sport",
@@ -139,7 +131,7 @@ export const channels = [
     id: 18,
     name: "Automoto",
     category: "Sport",
-    cover: "/logo/automoto.png",
+    cover: "/logo/automoto.jpg",
     streamUrl: "https://bolaloca.my/player/3/23",
     status: "HD",
   },

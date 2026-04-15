@@ -44,7 +44,7 @@ export default function App() {
 
         <main className="pb-14">
           <section className="mx-auto max-w-7xl px-4 pb-8 pt-10 md:px-8">
-            <div className="grid items-center gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="flex flex-col gap-8">
               <div>
                 <div className="inline-flex rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-sm text-green-300">
                   Streaming live • Interface premium
@@ -61,32 +61,6 @@ export default function App() {
                   stylée, avec un lecteur intégré et une base prête pour la
                   version mobile Capacitor.
                 </p>
-              </div>
-
-              <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-4 backdrop-blur-xl">
-                <h3 className="text-lg font-bold text-white">Aperçu</h3>
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  {filteredChannels.slice(0, 4).map((channel) => (
-                    <div
-                      key={channel.id}
-                      className="overflow-hidden rounded-2xl border border-white/10 bg-white/5"
-                    >
-                      <img
-                        src={channel.cover || "/logo.png"}
-                        alt={channel.name}
-                        className="h-24 w-full object-cover"
-                      />
-                      <div className="p-3">
-                        <p className="truncate text-sm font-semibold text-white">
-                          {channel.name}
-                        </p>
-                        <p className="text-xs text-zinc-400">
-                          {channel.category}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </section>

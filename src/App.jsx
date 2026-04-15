@@ -1,145 +1,97 @@
-const { app, BrowserWindow, session, shell } = require("electron");
-const path = require("path");
+import { useMemo, useState } from "react";
+import ChannelCard from "./components/ChannelCard";
+import VideoPlayer from "./components/VideoPlayer";
+import { channels } from "./data/channels";
 
-const APP_URL = "https://evrardfoot.vercel.app";
+export default function App() {
+  const [search, setSearch] = useState("");
+  const [selectedChannel, setSelectedChannel] = useState(null);
 
-const ALLOWED_HOSTS = new Set([
-  "evrardfoot.vercel.app",
-  "bolaloca.my",
-]);
+  const filteredChannels = useMemo(() => {
+    const q = search.toLowerCase();
+    return channels.filter(
+      (channel) =>
+        channel.name.toLowerCase().includes(q) ||
+        channel.category.toLowerCase().includes(q)
+    );
+  }, [search]);
 
-const BLOCKED_KEYWORDS = [
-  "doubleclick",
-  "googlesyndication",
-  "adservice",
-  "adnxs",
-  "popads",
-  "propellerads",
-  "taboola",
-  "outbrain",
-  "exoclick",
-  "trafficjunky",
-  "adskeeper",
-  "hilltopads",
-  "onclick",
-  "popunder",
-  "adroll",
-  "mgid",
-  "sex",
-  "porn",
-  "xxx",
-  "adult",
-];
+  return (
+    <div className="relative min-h-screen overflow-x-hidden bg-black text-white">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.15),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(34,197,94,0.1),_transparent_25%)]" />
 
-function isAllowedUrl(rawUrl) {
-  try {
-    const url = new URL(rawUrl);
-    const host = url.hostname.toLowerCase();
+      <div className="relative z-10">
+        <header className="sticky top-0 z-30 border-b border-white/10 bg-black/70 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-green-400">
+                EvrardFoot
+              </h1>
+              <p className="text-sm text-zinc-400">
+                Plateforme IPTV verte et noire
+              </p>
+            </div>
 
-    if (!["http:", "https:"].includes(url.protocol)) return false;
-    if (ALLOWED_HOSTS.has(host)) return true;
+            <input
+              type="text"
+              placeholder="Rechercher une chaîne..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 md:w-[260px]"
+            />
+          </div>
+        </header>
 
-    for (const allowed of ALLOWED_HOSTS) {
-      if (host.endsWith(`.${allowed}`)) return true;
-    }
+        <main className="pb-14">
+          <section className="mx-auto max-w-7xl px-4 pb-8 pt-10 md:px-8">
+            <div className="flex flex-col gap-8">
+              <div>
+                <div className="inline-flex rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-sm text-green-300">
+                  Streaming live • Interface premium
+                </div>
 
-    return false;
-  } catch {
-    return false;
-  }
+                <h2 className="mt-5 text-4xl font-black leading-tight md:text-6xl">
+                  Une plateforme IPTV{" "}
+                  <span className="text-green-400">élégante</span>, fluide et
+                  moderne.
+                </h2>
+
+                <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-400 md:text-lg">
+                  EvrardFoot te permet d’afficher tes chaînes dans une mosaïque
+                  stylée, avec un lecteur intégré et une base prête pour la
+                  version mobile Capacitor.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-7xl px-4 md:px-8">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold">Chaînes disponibles</h3>
+              <p className="text-sm text-zinc-400">
+                Mosaïque paysage, jolie et moderne
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {filteredChannels.map((channel) => (
+                <ChannelCard
+                  key={channel.id}
+                  channel={channel}
+                  onSelect={setSelectedChannel}
+                />
+              ))}
+            </div>
+          </section>
+        </main>
+      </div>
+
+      {selectedChannel && (
+        <VideoPlayer
+          channel={selectedChannel}
+          onClose={() => setSelectedChannel(null)}
+        />
+      )}
+    </div>
+  );
 }
-
-function isBlockedByKeyword(rawUrl) {
-  const value = rawUrl.toLowerCase();
-  return BLOCKED_KEYWORDS.some((k) => value.includes(k));
-}
-
-function createWindow() {
-  const win = new BrowserWindow({
-    width: 1400,
-    height: 900,
-    backgroundColor: "#000000",
-    autoHideMenuBar: true,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-      webSecurity: true,
-      devTools: true, // passe à false pour les démos si tu veux
-    },
-  });
-
-  // Bloque toute tentative d'ouverture de nouvelle fenêtre / popup
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    if (isAllowedUrl(url) && !isBlockedByKeyword(url)) {
-      return { action: "deny" };
-    }
-    return { action: "deny" };
-  });
-
-  // Bloque les navigations hors liste blanche
-  win.webContents.on("will-navigate", (event, url) => {
-    if (!isAllowedUrl(url) || isBlockedByKeyword(url)) {
-      event.preventDefault();
-    }
-  });
-
-  // Intercepte et bloque certaines requêtes pub / domaines douteux
-  session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
-    const url = details.url || "";
-
-    if (isBlockedByKeyword(url)) {
-      return callback({ cancel: true });
-    }
-
-    try {
-      const parsed = new URL(url);
-      const host = parsed.hostname.toLowerCase();
-
-      // Autorise ton app, le player utile, et quelques ressources de base
-      const allowed =
-        ALLOWED_HOSTS.has(host) ||
-        [...ALLOWED_HOSTS].some((d) => host.endsWith(`.${d}`)) ||
-        details.resourceType === "image" ||
-        details.resourceType === "media" ||
-        details.resourceType === "script" ||
-        details.resourceType === "stylesheet" ||
-        details.resourceType === "xhr" ||
-        details.resourceType === "fetch";
-
-      if (!allowed) {
-        return callback({ cancel: true });
-      }
-
-      return callback({ cancel: false });
-    } catch {
-      return callback({ cancel: true });
-    }
-  });
-
-  // Empêche l'ouverture externe automatique
-  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
-
-  // Si un lien externe passe malgré tout, on ne l'ouvre pas
-  win.webContents.on("new-window", (event) => {
-    event.preventDefault();
-  });
-
-  win.loadURL(APP_URL);
-}
-
-app.whenReady().then(() => {
-  createWindow();
-
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
-
-app.on("web-contents-created", (_event, contents) => {
-  contents.setWindowOpenHandler(() => ({ action: "deny" }));
-});
-
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
-});

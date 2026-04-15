@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 export default function VideoPlayer({ channel, onClose }) {
   const [frameError, setFrameError] = useState(false);
-  const [interactionUnlocked, setInteractionUnlocked] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const safeUrl = useMemo(() => {
@@ -34,7 +34,7 @@ export default function VideoPlayer({ channel, onClose }) {
   }, [channel, onClose]);
 
   useEffect(() => {
-    setInteractionUnlocked(false);
+    setIsLocked(false);
     setIsLoading(true);
     setFrameError(false);
   }, [channel]);
@@ -56,14 +56,14 @@ export default function VideoPlayer({ channel, onClose }) {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setInteractionUnlocked((prev) => !prev)}
+              onClick={() => setIsLocked((prev) => !prev)}
               className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                interactionUnlocked
+                isLocked
                   ? "border border-green-500/30 bg-green-500/20 text-green-300 hover:bg-green-500/30"
                   : "border border-white/10 bg-white/5 text-white hover:bg-white/10"
               }`}
             >
-              {interactionUnlocked ? "Verrouiller" : "Déverrouiller"}
+              {isLocked ? "Déverrouiller" : "Verrouiller"}
             </button>
 
             <button
@@ -73,14 +73,6 @@ export default function VideoPlayer({ channel, onClose }) {
               Fermer
             </button>
           </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-zinc-950/90 px-4 py-2 text-xs text-zinc-400">
-          <span className="truncate">
-            {interactionUnlocked
-              ? "Interaction active."
-              : "Interaction verrouillée : aucun clic direct n’est envoyé à la page tant que tu ne déverrouilles pas."}
-          </span>
         </div>
 
         {!safeUrl ? (
@@ -93,7 +85,7 @@ export default function VideoPlayer({ channel, onClose }) {
               title={channel.name}
               src={safeUrl}
               className={`h-full w-full border-0 bg-black ${
-                interactionUnlocked ? "pointer-events-auto" : "pointer-events-none"
+                isLocked ? "pointer-events-none" : "pointer-events-auto"
               }`}
               referrerPolicy="no-referrer"
               sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
@@ -107,26 +99,8 @@ export default function VideoPlayer({ channel, onClose }) {
               }}
             />
 
-            {!interactionUnlocked && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 backdrop-blur-[1px]">
-                <div className="mx-4 max-w-lg rounded-2xl border border-white/10 bg-zinc-950/95 p-6 text-center shadow-2xl">
-                  <h3 className="text-lg font-semibold text-white">
-                    Lecture protégée
-                  </h3>
-                  <p className="mt-3 text-sm leading-6 text-zinc-300">
-                    La zone vidéo reste verrouillée tant que tu n’actives pas
-                    l’interaction. Cela évite la plupart des clics accidentels
-                    sur des couches parasites.
-                  </p>
-
-                  <button
-                    onClick={() => setInteractionUnlocked(true)}
-                    className="mt-5 rounded-xl bg-green-500 px-5 py-3 font-semibold text-black transition hover:scale-[1.02]"
-                  >
-                    Activer l’interaction
-                  </button>
-                </div>
-              </div>
+            {isLocked && (
+              <div className="absolute inset-0 z-10 bg-transparent" />
             )}
 
             {isLoading && (

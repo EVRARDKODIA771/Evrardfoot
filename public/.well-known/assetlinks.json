@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "com.evrardfoot.app",
       "sha256_cert_fingerprints": [
-        "F0:C5:94:A3:31:D2:0A:15:C1:2E:33:3A:A3:3D:53:5A:7E:1D:63:41:10:E5:7A:FC:DF:0E:D4:23:F3:86:2E:9C"
+        "F0:C5:94:A3:31:D2:0A:15:C1:2E:33:3A:A3:3D:53:5A:7E:1D:63:41:10:E5:7A:FC:DF:0E:D4:23:F3:86:2E:9C",
+        "27:BA:04:62:04:C9:5E:18:23:FC:C3:E7:6F:06:EE:71:26:94:96:69:37:0B:41:99:AB:D1:57:E6:85:9C:4C:1F"
       ]
     }
   }

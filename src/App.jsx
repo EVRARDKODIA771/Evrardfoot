@@ -1,7 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ChannelCard from "./components/ChannelCard";
 import VideoPlayer from "./components/VideoPlayer";
 import { channels } from "./data/channels";
+
+function slugify(value) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+}
 
 export default function App() {
   const [search, setSearch] = useState("");
@@ -15,6 +24,44 @@ export default function App() {
         channel.category.toLowerCase().includes(q)
     );
   }, [search]);
+
+  useEffect(() => {
+    const syncFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const idParam = params.get("id");
+
+      if (!idParam) {
+        setSelectedChannel(null);
+        return;
+      }
+
+      const id = Number(idParam);
+      const found = channels.find((channel) => channel.id === id) || null;
+      setSelectedChannel(found);
+    };
+
+    syncFromUrl();
+    window.addEventListener("popstate", syncFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", syncFromUrl);
+    };
+  }, []);
+
+  const openChannel = (channel) => {
+    const params = new URLSearchParams();
+    params.set("id", String(channel.id));
+    params.set("name", slugify(channel.name));
+
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.pushState({}, "", newUrl);
+    setSelectedChannel(channel);
+  };
+
+  const closeChannel = () => {
+    window.history.pushState({}, "", window.location.pathname);
+    setSelectedChannel(null);
+  };
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-black text-white">
@@ -78,7 +125,7 @@ export default function App() {
                 <ChannelCard
                   key={channel.id}
                   channel={channel}
-                  onSelect={setSelectedChannel}
+                  onSelect={openChannel}
                 />
               ))}
             </div>
@@ -89,7 +136,7 @@ export default function App() {
       {selectedChannel && (
         <VideoPlayer
           channel={selectedChannel}
-          onClose={() => setSelectedChannel(null)}
+          onClose={closeChannel}
         />
       )}
     </div>

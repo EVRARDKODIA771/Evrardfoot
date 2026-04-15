@@ -12,7 +12,7 @@ export const channels = [
     name: "Bein Sport 1",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/1",
+    streamUrl: "https://bolaloca.my/player/3/1",
     status: "FHD",
   },
    {
@@ -20,7 +20,7 @@ export const channels = [
     name: "Bein Sport 2",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/2",
+    streamUrl: "https://bolaloca.my/player/3/2",
     status: "FHD",
   },
    {
@@ -28,7 +28,7 @@ export const channels = [
     name: "Bein Sport 3",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/3",
+    streamUrl: "https://bolaloca.my/player/3/3",
     status: "FHD",
   },
   {
@@ -36,7 +36,7 @@ export const channels = [
     name: "Bein Sport 4 Max",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/4",
+    streamUrl: "https://bolaloca.my/player/3/4",
     status: "FHD",
   },
    {
@@ -44,7 +44,7 @@ export const channels = [
     name: "Bein Sport 5 Max",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/5",
+    streamUrl: "https://bolaloca.my/player/3/5",
     status: "FHD",
   },
     {
@@ -52,7 +52,7 @@ export const channels = [
     name: "Bein Sport 6 Max",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/6",
+    streamUrl: "https://bolaloca.my/player/3/6",
     status: "FHD",
   },
    {
@@ -60,7 +60,7 @@ export const channels = [
     name: "Bein Sport 6 Max",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/6",
+    streamUrl: "https://bolaloca.my/player/3/6",
     status: "FHD",
   },
   {
@@ -68,7 +68,7 @@ export const channels = [
     name: "Canal +",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/11",
+    streamUrl: "https://bolaloca.my/player/3/11",
     status: "HD",
   },
    {
@@ -76,7 +76,7 @@ export const channels = [
     name: "Canal + Foot ",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/12",
+    streamUrl: "https://bolaloca.my/player/3/12",
     status: "HD",
   },
   {
@@ -84,7 +84,7 @@ export const channels = [
     name: "Canal + Sport ",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/13",
+    streamUrl: "https://bolaloca.my/player/3/13",
     status: "HD",
   },
   {
@@ -92,7 +92,7 @@ export const channels = [
     name: "Canal + 360 ",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/14",
+    streamUrl: "https://bolaloca.my/player/3/14",
     status: "HD",
   },
   {
@@ -100,7 +100,7 @@ export const channels = [
     name: "Canal + 360 ",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/14",
+    streamUrl: "https://bolaloca.my/player/3/14",
     status: "HD",
   },
     {
@@ -108,7 +108,7 @@ export const channels = [
     name: "Eurosport 1",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/15",
+    streamUrl: "https://bolaloca.my/player/3/15",
     status: "HD",
   },
     {
@@ -116,7 +116,7 @@ export const channels = [
     name: "Eurosport 2",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/16",
+    streamUrl: "https://bolaloca.my/player/3/16",
     status: "HD",
   },
     {
@@ -124,7 +124,7 @@ export const channels = [
     name: "RMC SPORT 1",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/17",
+    streamUrl: "https://bolaloca.my/player/3/17",
     status: "HD",
   },
     {
@@ -132,7 +132,7 @@ export const channels = [
     name: "L'EQUIPE",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/19",
+    streamUrl: "https://bolaloca.my/player/3/19",
     status: "HD",
   },
     {
@@ -140,7 +140,7 @@ export const channels = [
     name: "Automoto",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/23",
+    streamUrl: "https://bolaloca.my/player/3/23",
     status: "HD",
   },
 
@@ -149,7 +149,7 @@ export const channels = [
     name: "Chaine Française",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/24",
+    streamUrl: "https://bolaloca.my/player/3/24",
     status: "HD",
   },
 
@@ -158,7 +158,7 @@ export const channels = [
     name: "TMC",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/25",
+    streamUrl: "https://bolaloca.my/player/3/25",
     status: "HD",
   },
   {
@@ -166,7 +166,7 @@ export const channels = [
     name: "M6",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/26",
+    streamUrl: "https://bolaloca.my/player/3/26",
     status: "HD",
   },
 
@@ -175,7 +175,7 @@ export const channels = [
     name: "NRJ12",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/27",
+    streamUrl: "https://bolaloca.my/player/3/27",
     status: "HD",
   },
   {
@@ -183,7 +183,7 @@ export const channels = [
     name: "FRANCE.TV 1",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/28",
+    streamUrl: "https://bolaloca.my/player/3/28",
     status: "HD",
   },
    {
@@ -191,7 +191,7 @@ export const channels = [
     name: "FRANCE.TV 2",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/29",
+    streamUrl: "https://bolaloca.my/player/3/29",
     status: "HD",
   },
   {
@@ -199,7 +199,7 @@ export const channels = [
     name: "FRANCE.TV 3",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/30",
+    streamUrl: "https://bolaloca.my/player/3/30",
     status: "HD",
   },
    {
@@ -207,7 +207,7 @@ export const channels = [
     name: "FRANCE.TV 4",
     category: "Sport",
     cover: "/logo.png",
-    streamUrl: "http://bolaloca.my/player/3/31",
+    streamUrl: "https://bolaloca.my/player/3/31",
     status: "HD",
   },
 ];

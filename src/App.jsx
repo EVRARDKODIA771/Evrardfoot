@@ -16,6 +16,8 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);
 
+  const hasSearch = search.trim().length > 0;
+
   const filteredChannels = useMemo(() => {
     const q = search.toLowerCase();
     return channels.filter(
@@ -65,54 +67,45 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#050505] text-white">
-      {/* BACKGROUND GLOBAL */}
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_28%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.04),transparent_20%)]" />
-      </div>
-
-      <div className="relative z-10">
-        {/* HEADER */}
-        <header className="sticky top-0 z-30 border-b border-white/10 bg-black/70 backdrop-blur-2xl">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">
-                EvrardFoot
-              </h1>
-              <p className="text-sm text-zinc-400">
-                Streaming live premium
-              </p>
-            </div>
-
-            <div className="w-full md:w-[300px]">
-              <input
-                type="text"
-                placeholder="Rechercher une chaîne..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 transition focus:border-white/20 focus:bg-white/[0.06]"
-              />
-            </div>
+      
+      {/* HEADER */}
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-black/70 backdrop-blur-2xl">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-white">
+              EvrardFoot
+            </h1>
+            <p className="text-sm text-zinc-400">
+              Streaming live premium
+            </p>
           </div>
-        </header>
 
-        <main className="pb-16">
-          {/* HERO AVEC IMAGE FOOTBALL */}
+          <div className="w-full md:w-[300px]">
+            <input
+              type="text"
+              placeholder="Rechercher une chaîne..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 transition focus:border-white/20 focus:bg-white/[0.06]"
+            />
+          </div>
+        </div>
+      </header>
+
+      <main className="pb-16">
+
+        {/* HERO (affiché seulement si pas de recherche) */}
+        {!hasSearch && (
           <section className="relative h-[70vh] w-full overflow-hidden">
-            {/* IMAGE */}
             <img
               src="/bg.jpeg"
               alt="football background"
               className="absolute inset-0 h-full w-full object-cover"
             />
 
-            {/* OVERLAY DARK */}
             <div className="absolute inset-0 bg-black/70" />
-
-            {/* OVERLAY CINEMA */}
             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
 
-            {/* CONTENU */}
             <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-6 md:px-10">
               <div className="max-w-2xl">
                 <div className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-zinc-300 backdrop-blur-md">
@@ -130,59 +123,57 @@ export default function App() {
                   Accède à tes chaînes sportives en direct avec une expérience fluide,
                   immersive et pensée pour tous tes écrans.
                 </p>
-
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-zinc-300 backdrop-blur-sm">
-                    +{channels.length} chaînes
-                  </div>
-
-                  <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-zinc-300 backdrop-blur-sm">
-                    Streaming HD
-                  </div>
-
-                  <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-zinc-300 backdrop-blur-sm">
-                    Compatible mobile
-                  </div>
-                </div>
               </div>
             </div>
           </section>
+        )}
 
-          {/* LISTE CHAÎNES */}
-          <section className="mx-auto max-w-7xl px-4 md:px-8">
-            <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-              <div>
-                <h3 className="text-2xl font-bold tracking-tight text-white">
-                  Chaînes disponibles
-                </h3>
-                <p className="text-sm text-zinc-400">
-                  Mosaïque paysage, style épuré, ambiance cinéma
-                </p>
-              </div>
+        {/* LISTE CHAÎNES */}
+        <section
+          className={`mx-auto max-w-7xl px-4 md:px-8 ${
+            hasSearch ? "pt-10" : "pt-6"
+          }`}
+        >
+          <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h3 className="text-2xl font-bold tracking-tight text-white">
+                {hasSearch ? "Résultats de recherche" : "Chaînes disponibles"}
+              </h3>
 
-              <div className="text-sm text-zinc-500">
-                {filteredChannels.length} résultat{filteredChannels.length > 1 ? "s" : ""}
-              </div>
+              <p className="text-sm text-zinc-400">
+                {hasSearch
+                  ? `Résultats pour "${search}"`
+                  : "Mosaïque paysage, style épuré, ambiance cinéma"}
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-              {filteredChannels.map((channel) => (
-                <ChannelCard
-                  key={channel.id}
-                  channel={channel}
-                  onSelect={openChannel}
-                />
-              ))}
+            <div className="text-sm text-zinc-500">
+              {filteredChannels.length} résultat
+              {filteredChannels.length > 1 ? "s" : ""}
             </div>
-          </section>
-        </main>
-      </div>
+          </div>
+
+          {/* CAS : aucun résultat */}
+          {hasSearch && filteredChannels.length === 0 && (
+            <div className="flex items-center justify-center py-20 text-center text-zinc-500">
+              Aucune chaîne trouvée pour "{search}"
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {filteredChannels.map((channel) => (
+              <ChannelCard
+                key={channel.id}
+                channel={channel}
+                onSelect={openChannel}
+              />
+            ))}
+          </div>
+        </section>
+      </main>
 
       {selectedChannel && (
-        <VideoPlayer
-          channel={selectedChannel}
-          onClose={closeChannel}
-        />
+        <VideoPlayer channel={selectedChannel} onClose={closeChannel} />
       )}
     </div>
   );

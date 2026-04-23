@@ -65,13 +65,14 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#050505] text-white">
+      {/* BACKGROUND GLOBAL */}
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_28%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.04),transparent_20%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.02),transparent_25%,transparent_75%,rgba(255,255,255,0.02))]" />
       </div>
 
       <div className="relative z-10">
+        {/* HEADER */}
         <header className="sticky top-0 z-30 border-b border-white/10 bg-black/70 backdrop-blur-2xl">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
             <div>
@@ -96,39 +97,58 @@ export default function App() {
         </header>
 
         <main className="pb-16">
-          <section className="mx-auto max-w-7xl px-4 pb-10 pt-10 md:px-8 md:pt-14">
-            <div className="overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_10px_60px_rgba(0,0,0,0.45)] md:p-10">
-              <div className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-zinc-300">
-                Live TV • Interface moderne
-              </div>
+          {/* HERO AVEC IMAGE FOOTBALL */}
+          <section className="relative h-[70vh] w-full overflow-hidden">
+            {/* IMAGE */}
+            <img
+              src="/bg.jpeg"
+              alt="football background"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
 
-              <h2 className="mt-6 max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-6xl">
-                Une expérience streaming
-                <span className="block text-zinc-400">
-                  sobre, fluide et haut de gamme.
-                </span>
-              </h2>
+            {/* OVERLAY DARK */}
+            <div className="absolute inset-0 bg-black/70" />
 
-              <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-400 md:text-lg">
-                Parcours tes chaînes dans une mosaïque élégante, ouvre un lecteur
-                intégré, et profite d’une interface pensée pour être propre,
-                lisible et premium sur desktop comme sur mobile.
-              </p>
+            {/* OVERLAY CINEMA */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-300">
-                  {channels.length} chaînes disponibles
+            {/* CONTENU */}
+            <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-6 md:px-10">
+              <div className="max-w-2xl">
+                <div className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-zinc-300 backdrop-blur-md">
+                  Live TV • Football • Premium
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-300">
-                  Lecteur intégré
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-300">
-                  Compatible mobile
+
+                <h2 className="mt-6 text-4xl font-black leading-tight tracking-tight text-white md:text-6xl">
+                  Regarde le football
+                  <span className="block text-zinc-400">
+                    comme jamais auparavant.
+                  </span>
+                </h2>
+
+                <p className="mt-5 text-base leading-7 text-zinc-300 md:text-lg">
+                  Accède à tes chaînes sportives en direct avec une expérience fluide,
+                  immersive et pensée pour tous tes écrans.
+                </p>
+
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-zinc-300 backdrop-blur-sm">
+                    +{channels.length} chaînes
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-zinc-300 backdrop-blur-sm">
+                    Streaming HD
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-zinc-300 backdrop-blur-sm">
+                    Compatible mobile
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
+          {/* LISTE CHAÎNES */}
           <section className="mx-auto max-w-7xl px-4 md:px-8">
             <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>

@@ -161,7 +161,7 @@ export const channels = [
     id: 34,
     name: "france 4",
     category: "TV",
-    cover: "/logo/france4.png",
+    cover: "/logo/france 4.png",
     streamUrl: "https://cartelive.club/player/3/30",
     status: "HD",
   },

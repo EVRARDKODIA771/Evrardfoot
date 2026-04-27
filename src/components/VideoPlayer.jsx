@@ -4,16 +4,20 @@ export default function VideoPlayer({ channel, onClose }) {
   const [frameError, setFrameError] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [reader, setReader] = useState(1);
 
   const safeUrl = useMemo(() => {
-    if (!channel?.streamUrl) return "";
+    const rawUrl = reader === 2 ? channel?.streamUrl2 : channel?.streamUrl;
+
+    if (!rawUrl) return "";
+
     try {
-      const url = new URL(channel.streamUrl);
+      const url = new URL(rawUrl);
       return url.href;
     } catch {
       return "";
     }
-  }, [channel]);
+  }, [channel, reader]);
 
   useEffect(() => {
     if (!channel) return;
@@ -37,7 +41,13 @@ export default function VideoPlayer({ channel, onClose }) {
     setIsLocked(false);
     setIsLoading(true);
     setFrameError(false);
+    setReader(1);
   }, [channel]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    setFrameError(false);
+  }, [safeUrl]);
 
   if (!channel) return null;
 
@@ -55,11 +65,20 @@ export default function VideoPlayer({ channel, onClose }) {
                 {channel.name}
               </h2>
               <p className="truncate text-sm text-zinc-400">
-                {channel.category}
+                {channel.category} — Lecteur {reader}
               </p>
             </div>
 
             <div className="flex items-center gap-2">
+              {channel?.streamUrl2 && (
+                <button
+                  onClick={() => setReader((prev) => (prev === 1 ? 2 : 1))}
+                  className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.08]"
+                >
+                  {reader === 1 ? "Lecteur 2" : "Lecteur 1"}
+                </button>
+              )}
+
               <button
                 onClick={() => setIsLocked((prev) => !prev)}
                 className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
@@ -94,10 +113,10 @@ export default function VideoPlayer({ channel, onClose }) {
           </div>
         ) : (
           <div className="relative flex-1 bg-black">
-            {/* cadre vidéo */}
             <div className="absolute inset-0 p-3 md:p-5">
               <div className="relative h-full w-full overflow-hidden rounded-[24px] border border-white/10 bg-black shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
                 <iframe
+                  key={safeUrl}
                   title={channel.name}
                   src={safeUrl}
                   className={`h-full w-full border-0 bg-black ${
@@ -143,7 +162,6 @@ export default function VideoPlayer({ channel, onClose }) {
               </div>
             </div>
 
-            {/* petit badge flottant */}
             <div className="pointer-events-none absolute bottom-6 left-6 z-20 hidden rounded-full border border-white/10 bg-black/50 px-4 py-2 text-xs uppercase tracking-[0.25em] text-zinc-300 backdrop-blur-md md:block">
               EvrardFoot Player
             </div>

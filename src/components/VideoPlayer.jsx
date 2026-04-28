@@ -7,7 +7,10 @@ export default function VideoPlayer({ channel, onClose }) {
   const [reader, setReader] = useState(1);
 
   const safeUrl = useMemo(() => {
-    const rawUrl = reader === 2 ? channel?.streamUrl2 : channel?.streamUrl;
+    const rawUrl =
+      reader === 1
+        ? channel?.streamUrl2 || channel?.streamUrl
+        : channel?.streamUrl;
 
     if (!rawUrl) return "";
 
@@ -54,7 +57,6 @@ export default function VideoPlayer({ channel, onClose }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm">
       <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#050505] text-white">
-
         {/* HEADER */}
         <div className="border-b border-white/10 bg-black/60 backdrop-blur-2xl">
           <div className="flex items-center justify-between gap-4 px-4 py-4 md:px-6">
@@ -103,16 +105,15 @@ export default function VideoPlayer({ channel, onClose }) {
 
         {/* BANDEAU VPN */}
         <div className="mx-4 mt-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-center text-sm text-yellow-100">
-          Si la vidéo ne fonctionne pas ou affiche <b>“stream offline”</b>, utilisez
-          NordVPN avec une localisation en France, puis rechargez le lecteur.
+          Si la vidéo ne fonctionne pas ou affiche <b>“stream offline”</b>,
+          utilisez NordVPN avec une localisation en France, puis rechargez le
+          lecteur.
         </div>
 
         {!safeUrl ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <div className="max-w-md rounded-[24px] border border-white/10 bg-white/[0.04] px-6 py-5 text-center shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
-              <p className="text-base font-semibold text-white">
-                URL invalide
-              </p>
+              <p className="text-base font-semibold text-white">URL invalide</p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
                 L’adresse du flux est absente ou mal formée pour cette chaîne.
               </p>
@@ -120,11 +121,9 @@ export default function VideoPlayer({ channel, onClose }) {
           </div>
         ) : (
           <div className="relative flex-1 bg-black">
-
             {/* PLAYER CENTRÉ */}
             <div className="absolute inset-0 flex items-center justify-center p-4 md:p-6">
               <div className="relative h-[85%] w-[95%] md:h-[80%] md:w-[85%] overflow-hidden rounded-[24px] border border-white/10 bg-black shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-
                 <iframe
                   key={safeUrl}
                   title={channel.name}
@@ -163,13 +162,12 @@ export default function VideoPlayer({ channel, onClose }) {
                         Lecture intégrée impossible
                       </p>
                       <p className="mt-2 text-sm leading-6 text-zinc-400">
-                        Cette chaîne refuse probablement l’affichage dans une iframe
-                        ou bloque l’intégration externe.
+                        Cette chaîne refuse probablement l’affichage dans une
+                        iframe ou bloque l’intégration externe.
                       </p>
                     </div>
                   </div>
                 )}
-
               </div>
             </div>
 

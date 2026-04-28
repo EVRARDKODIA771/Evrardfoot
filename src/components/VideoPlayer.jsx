@@ -40,6 +40,7 @@ export default function VideoPlayer({ channel, onClose }) {
     };
   }, [channel, onClose]);
 
+  // reset quand on change de chaîne
   useEffect(() => {
     setIsLocked(false);
     setIsLoading(true);
@@ -47,9 +48,16 @@ export default function VideoPlayer({ channel, onClose }) {
     setReader(1);
   }, [channel]);
 
+  // FIX PRINCIPAL : timeout anti-bug + reset loading
   useEffect(() => {
     setIsLoading(true);
     setFrameError(false);
+
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 5000); // sécurité si iframe bug
+
+    return () => clearTimeout(timer);
   }, [safeUrl]);
 
   if (!channel) return null;
@@ -121,7 +129,6 @@ export default function VideoPlayer({ channel, onClose }) {
           </div>
         ) : (
           <div className="relative flex-1 bg-black">
-            {/* PLAYER CENTRÉ */}
             <div className="absolute inset-0 flex items-center justify-center p-4 md:p-6">
               <div className="relative h-[85%] w-[95%] md:h-[80%] md:w-[85%] overflow-hidden rounded-[24px] border border-white/10 bg-black shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
                 <iframe
@@ -143,18 +150,21 @@ export default function VideoPlayer({ channel, onClose }) {
                   }}
                 />
 
+                {/* LOCK */}
                 {isLocked && (
                   <div className="absolute inset-0 z-10 bg-transparent" />
                 )}
 
+                {/* LOADING FIX */}
                 {isLoading && (
-                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/65 backdrop-blur-sm">
+                  <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/65 backdrop-blur-sm">
                     <div className="rounded-2xl border border-white/10 bg-zinc-950/90 px-5 py-4 text-sm text-zinc-200 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
                       Chargement du lecteur…
                     </div>
                   </div>
                 )}
 
+                {/* ERROR */}
                 {frameError && (
                   <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 px-6">
                     <div className="max-w-md rounded-[24px] border border-white/10 bg-white/[0.04] px-6 py-5 text-center shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
@@ -171,7 +181,6 @@ export default function VideoPlayer({ channel, onClose }) {
               </div>
             </div>
 
-            {/* BADGE */}
             <div className="pointer-events-none absolute bottom-6 left-6 z-20 hidden rounded-full border border-white/10 bg-black/50 px-4 py-2 text-xs uppercase tracking-[0.25em] text-zinc-300 backdrop-blur-md md:block">
               EvrardFoot Player
             </div>

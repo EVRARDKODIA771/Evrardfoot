@@ -106,7 +106,7 @@ export default function VideoPlayer({ channel, onClose }) {
         {/* BANDEAU VPN */}
         <div className="mx-4 mt-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-center text-sm text-yellow-100">
           Si la vidéo ne fonctionne pas ou affiche <b>“stream offline”</b>,
-          utilisez NordVPN avec une localisation en France, puis rechargez le
+          utilisez NordVPN avec une localisation aux USA, puis rechargez le
           lecteur.
         </div>
 

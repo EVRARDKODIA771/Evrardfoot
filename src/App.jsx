@@ -17,22 +17,30 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);
 
+  // 🔥 ONE SIGNAL FIXÉ
   useEffect(() => {
-    const initOneSignal = () => {
+    const initOneSignal = async () => {
       try {
+        if (!window.Capacitor) {
+          console.log("Mode web → OneSignal désactivé");
+          return;
+        }
+
+        console.log("Capacitor détecté → init OneSignal");
+
         OneSignal.initialize("e42fc362-9e1e-40c5-a851-f3a5d3863a2c");
 
-        OneSignal.Notifications.requestPermission(true).then((accepted) => {
-          console.log("Permission notifications:", accepted);
-        });
+        const accepted = await OneSignal.Notifications.requestPermission(true);
+        console.log("Permission notifications:", accepted);
+
       } catch (error) {
-        console.log("OneSignal non disponible sur le web :", error);
+        console.log("Erreur OneSignal :", error);
       }
     };
 
-    if (window?.Capacitor) {
-      document.addEventListener("deviceready", initOneSignal, false);
-    }
+    // ⚡ On laisse le temps à la WebView de charger
+    setTimeout(initOneSignal, 1500);
+
   }, []);
 
   const hasSearch = search.trim().length > 0;

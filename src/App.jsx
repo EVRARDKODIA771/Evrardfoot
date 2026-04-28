@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import OneSignal from "onesignal-cordova-plugin";
 import ChannelCard from "./components/ChannelCard";
 import VideoPlayer from "./components/VideoPlayer";
 import { channels } from "./data/channels";
@@ -15,6 +16,24 @@ function slugify(value) {
 export default function App() {
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);
+
+  useEffect(() => {
+    const initOneSignal = () => {
+      try {
+        OneSignal.initialize("e42fc362-9e1e-40c5-a851-f3a5d3863a2c");
+
+        OneSignal.Notifications.requestPermission(true).then((accepted) => {
+          console.log("Permission notifications:", accepted);
+        });
+      } catch (error) {
+        console.log("OneSignal non disponible sur le web :", error);
+      }
+    };
+
+    if (window?.Capacitor) {
+      document.addEventListener("deviceready", initOneSignal, false);
+    }
+  }, []);
 
   const hasSearch = search.trim().length > 0;
 
@@ -67,7 +86,6 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#050505] text-white">
-      
       {/* HEADER */}
       <header className="sticky top-0 z-30 border-b border-white/10 bg-black/70 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
@@ -75,9 +93,7 @@ export default function App() {
             <h1 className="text-2xl font-black tracking-tight text-white">
               EvrardFoot
             </h1>
-            <p className="text-sm text-zinc-400">
-              Streaming live premium
-            </p>
+            <p className="text-sm text-zinc-400">Streaming live premium</p>
           </div>
 
           <div className="w-full md:w-[300px]">
@@ -93,8 +109,6 @@ export default function App() {
       </header>
 
       <main className="pb-16">
-
-        {/* HERO (affiché seulement si pas de recherche) */}
         {!hasSearch && (
           <section className="relative h-[70vh] w-full overflow-hidden">
             <img
@@ -120,15 +134,14 @@ export default function App() {
                 </h2>
 
                 <p className="mt-5 text-base leading-7 text-zinc-300 md:text-lg">
-                  Accède à tes chaînes sportives en direct avec une expérience fluide,
-                  immersive et pensée pour tous tes écrans.
+                  Accède à tes chaînes sportives en direct avec une expérience
+                  fluide, immersive et pensée pour tous tes écrans.
                 </p>
               </div>
             </div>
           </section>
         )}
 
-        {/* LISTE CHAÎNES */}
         <section
           className={`mx-auto max-w-7xl px-4 md:px-8 ${
             hasSearch ? "pt-10" : "pt-6"
@@ -153,7 +166,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* CAS : aucun résultat */}
           {hasSearch && filteredChannels.length === 0 && (
             <div className="flex items-center justify-center py-20 text-center text-zinc-500">
               Aucune chaîne trouvée pour "{search}"

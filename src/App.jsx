@@ -19,6 +19,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [favorites, setFavorites] = useState([]);
   const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const savedFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
@@ -26,6 +27,9 @@ export default function App() {
 
     setFavorites(savedFavorites);
     setHistory(savedHistory);
+
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -232,9 +236,9 @@ export default function App() {
                   className="min-w-[210px] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] text-left transition hover:bg-white/[0.08]"
                 >
                   <img
-                    src={channel.logo || channel.image || "/bg.jpeg"}
+                    src={channel.cover || channel.logo || channel.image || "/bg.jpeg"}
                     alt={channel.name}
-                    className="h-28 w-full object-cover"
+                    className="h-28 w-full object-contain bg-black p-4"
                   />
                   <div className="p-3">
                     <p className="truncate text-sm font-semibold">
@@ -270,7 +274,7 @@ export default function App() {
             </div>
           </div>
 
-          {displayedChannels.length === 0 && (
+          {!loading && displayedChannels.length === 0 && (
             <div className="flex items-center justify-center rounded-3xl border border-white/10 bg-white/[0.03] py-20 text-center text-zinc-500">
               {activeTab === "favorites"
                 ? "Aucun favori pour le moment."
@@ -278,17 +282,33 @@ export default function App() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {displayedChannels.map((channel) => (
-              <ChannelCard
-                key={channel.id}
-                channel={channel}
-                onSelect={openChannel}
-                isFavorite={favorites.includes(channel.id)}
-                onToggleFavorite={toggleFavorite}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-[210px] rounded-[24px] skeleton"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {displayedChannels.map((channel, index) => (
+                <div
+                  key={channel.id}
+                  className="animate-card-in"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <ChannelCard
+                    channel={channel}
+                    onSelect={openChannel}
+                    isFavorite={favorites.includes(channel.id)}
+                    onToggleFavorite={toggleFavorite}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </main>
 

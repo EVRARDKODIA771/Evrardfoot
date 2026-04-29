@@ -1,4 +1,9 @@
-export default function ChannelCard({ channel, onSelect }) {
+export default function ChannelCard({
+  channel,
+  onSelect,
+  isFavorite,
+  onToggleFavorite,
+}) {
   return (
     <button
       onClick={() => onSelect(channel)}
@@ -6,6 +11,17 @@ export default function ChannelCard({ channel, onSelect }) {
     >
       {/* fond léger */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_45%)] opacity-70" />
+
+      {/* ❤️ FAVORI */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavorite(channel.id);
+        }}
+        className="absolute right-3 top-3 z-20 text-xl transition hover:scale-110"
+      >
+        {isFavorite ? "❤️" : "🤍"}
+      </button>
 
       {/* image */}
       <div className="absolute inset-0 flex items-center justify-center p-6">
@@ -27,8 +43,12 @@ export default function ChannelCard({ channel, onSelect }) {
             {channel.status || "Disponible"}
           </span>
 
-          <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-zinc-300 backdrop-blur-sm">
-            <span className="h-2 w-2 rounded-full bg-white/70" />
+          {/* 🔴 LIVE amélioré */}
+          <span className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-[11px] font-bold tracking-[0.18em] text-red-400 backdrop-blur-sm shadow-[0_0_12px_rgba(239,68,68,0.3)]">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+            </span>
             LIVE
           </span>
         </div>
@@ -43,7 +63,7 @@ export default function ChannelCard({ channel, onSelect }) {
         </div>
       </div>
 
-      {/* contour lumineux subtil */}
+      {/* contour lumineux */}
       <div className="pointer-events-none absolute inset-0 rounded-[24px] ring-1 ring-inset ring-white/0 transition duration-300 group-hover:ring-white/10" />
     </button>
   );

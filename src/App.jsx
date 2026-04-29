@@ -16,8 +16,26 @@ function slugify(value) {
 export default function App() {
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [activeTab, setActiveTab] = useState("home");
+  const [favorites, setFavorites] = useState([]);
+  const [history, setHistory] = useState([]);
 
-  // 🔥 ONE SIGNAL FIXÉ
+  useEffect(() => {
+    const savedFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+    const savedHistory = JSON.parse(localStorage.getItem("watch_history") || "[]");
+
+    setFavorites(savedFavorites);
+    setHistory(savedHistory);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("favorites", JSON.stringify(favorites));
+  }, [favorites]);
+
+  useEffect(() => {
+    localStorage.setItem("watch_history", JSON.stringify(history));
+  }, [history]);
+
   useEffect(() => {
     const initOneSignal = async () => {
       try {
@@ -32,27 +50,41 @@ export default function App() {
 
         const accepted = await OneSignal.Notifications.requestPermission(true);
         console.log("Permission notifications:", accepted);
-
       } catch (error) {
         console.log("Erreur OneSignal :", error);
       }
     };
 
-    // ⚡ On laisse le temps à la WebView de charger
     setTimeout(initOneSignal, 1500);
-
   }, []);
 
   const hasSearch = search.trim().length > 0;
 
   const filteredChannels = useMemo(() => {
-    const q = search.toLowerCase();
+    const q = search.toLowerCase().trim();
+
     return channels.filter(
       (channel) =>
         channel.name.toLowerCase().includes(q) ||
         channel.category.toLowerCase().includes(q)
     );
   }, [search]);
+
+  const favoriteChannels = useMemo(() => {
+    return channels.filter((channel) => favorites.includes(channel.id));
+  }, [favorites]);
+
+  const historyChannels = useMemo(() => {
+    return history
+      .map((id) => channels.find((channel) => channel.id === id))
+      .filter(Boolean);
+  }, [history]);
+
+  const displayedChannels = useMemo(() => {
+    if (activeTab === "favorites") return favoriteChannels;
+    if (activeTab === "search") return filteredChannels;
+    return filteredChannels;
+  }, [activeTab, favoriteChannels, filteredChannels]);
 
   useEffect(() => {
     const syncFromUrl = () => {
@@ -84,7 +116,13 @@ export default function App() {
 
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.pushState({}, "", newUrl);
+
     setSelectedChannel(channel);
+
+    setHistory((prev) => {
+      const next = [channel.id, ...prev.filter((id) => id !== channel.id)];
+      return next.slice(0, 12);
+    });
   };
 
   const closeChannel = () => {
@@ -92,9 +130,30 @@ export default function App() {
     setSelectedChannel(null);
   };
 
+  const toggleFavorite = (channelId) => {
+    setFavorites((prev) =>
+      prev.includes(channelId)
+        ? prev.filter((id) => id !== channelId)
+        : [...prev, channelId]
+    );
+  };
+
+  const sectionTitle =
+    activeTab === "favorites"
+      ? "Mes chaînes favorites"
+      : hasSearch || activeTab === "search"
+      ? "Résultats de recherche"
+      : "Chaînes disponibles";
+
+  const sectionSubtitle =
+    activeTab === "favorites"
+      ? "Tes chaînes sauvegardées sur cet appareil"
+      : hasSearch || activeTab === "search"
+      ? `Résultats pour "${search}"`
+      : "Mosaïque paysage, style épuré, ambiance cinéma";
+
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050505] text-white">
-      {/* HEADER */}
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050505] pb-20 text-white">
       <header className="sticky top-0 z-30 border-b border-white/10 bg-black/70 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
           <div>
@@ -104,20 +163,24 @@ export default function App() {
             <p className="text-sm text-zinc-400">Streaming live premium</p>
           </div>
 
-          <div className="w-full md:w-[300px]">
+          <div className="w-full md:w-[340px]">
             <input
               type="text"
               placeholder="Rechercher une chaîne..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => setActiveTab("search")}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setActiveTab("search");
+              }}
               className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 transition focus:border-white/20 focus:bg-white/[0.06]"
             />
           </div>
         </div>
       </header>
 
-      <main className="pb-16">
-        {!hasSearch && (
+      <main>
+        {activeTab === "home" && !hasSearch && (
           <section className="relative h-[70vh] w-full overflow-hidden">
             <img
               src="/bg.jpeg"
@@ -150,47 +213,127 @@ export default function App() {
           </section>
         )}
 
+        {activeTab === "home" && historyChannels.length > 0 && !hasSearch && (
+          <section className="mx-auto max-w-7xl px-4 pt-8 md:px-8">
+            <div className="mb-4">
+              <h3 className="text-xl font-bold tracking-tight">
+                Continuer à regarder
+              </h3>
+              <p className="text-sm text-zinc-400">
+                Tes dernières chaînes ouvertes
+              </p>
+            </div>
+
+            <div className="flex gap-4 overflow-x-auto pb-3">
+              {historyChannels.map((channel) => (
+                <button
+                  key={channel.id}
+                  onClick={() => openChannel(channel)}
+                  className="min-w-[210px] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] text-left transition hover:bg-white/[0.08]"
+                >
+                  <img
+                    src={channel.logo || channel.image || "/bg.jpeg"}
+                    alt={channel.name}
+                    className="h-28 w-full object-cover"
+                  />
+                  <div className="p-3">
+                    <p className="truncate text-sm font-semibold">
+                      {channel.name}
+                    </p>
+                    <p className="truncate text-xs text-zinc-400">
+                      {channel.category}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section
           className={`mx-auto max-w-7xl px-4 md:px-8 ${
-            hasSearch ? "pt-10" : "pt-6"
+            activeTab === "home" && !hasSearch ? "pt-8" : "pt-10"
           }`}
         >
           <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <h3 className="text-2xl font-bold tracking-tight text-white">
-                {hasSearch ? "Résultats de recherche" : "Chaînes disponibles"}
+                {sectionTitle}
               </h3>
 
-              <p className="text-sm text-zinc-400">
-                {hasSearch
-                  ? `Résultats pour "${search}"`
-                  : "Mosaïque paysage, style épuré, ambiance cinéma"}
-              </p>
+              <p className="text-sm text-zinc-400">{sectionSubtitle}</p>
             </div>
 
             <div className="text-sm text-zinc-500">
-              {filteredChannels.length} résultat
-              {filteredChannels.length > 1 ? "s" : ""}
+              {displayedChannels.length} résultat
+              {displayedChannels.length > 1 ? "s" : ""}
             </div>
           </div>
 
-          {hasSearch && filteredChannels.length === 0 && (
-            <div className="flex items-center justify-center py-20 text-center text-zinc-500">
-              Aucune chaîne trouvée pour "{search}"
+          {displayedChannels.length === 0 && (
+            <div className="flex items-center justify-center rounded-3xl border border-white/10 bg-white/[0.03] py-20 text-center text-zinc-500">
+              {activeTab === "favorites"
+                ? "Aucun favori pour le moment."
+                : `Aucune chaîne trouvée pour "${search}"`}
             </div>
           )}
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {filteredChannels.map((channel) => (
+            {displayedChannels.map((channel) => (
               <ChannelCard
                 key={channel.id}
                 channel={channel}
                 onSelect={openChannel}
+                isFavorite={favorites.includes(channel.id)}
+                onToggleFavorite={toggleFavorite}
               />
             ))}
           </div>
         </section>
       </main>
+
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/85 px-4 py-3 backdrop-blur-2xl md:hidden">
+        <div className="mx-auto grid max-w-md grid-cols-3 rounded-2xl bg-white/[0.04] p-1">
+          <button
+            onClick={() => {
+              setActiveTab("home");
+              setSearch("");
+            }}
+            className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+              activeTab === "home"
+                ? "bg-white text-black"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            Accueil
+          </button>
+
+          <button
+            onClick={() => setActiveTab("search")}
+            className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+              activeTab === "search"
+                ? "bg-white text-black"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            Recherche
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab("favorites");
+              setSearch("");
+            }}
+            className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+              activeTab === "favorites"
+                ? "bg-white text-black"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            Favoris
+          </button>
+        </div>
+      </nav>
 
       {selectedChannel && (
         <VideoPlayer channel={selectedChannel} onClose={closeChannel} />

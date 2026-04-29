@@ -5,6 +5,7 @@ export default function VideoPlayer({ channel, onClose }) {
   const [isLocked, setIsLocked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [reader, setReader] = useState(1);
+  const [showControls, setShowControls] = useState(true);
 
   const safeUrl = useMemo(() => {
     const rawUrl =
@@ -26,9 +27,7 @@ export default function VideoPlayer({ channel, onClose }) {
     if (!channel) return;
 
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
+      if (e.key === "Escape") onClose();
     };
 
     document.addEventListener("keydown", handleKeyDown);
@@ -40,33 +39,46 @@ export default function VideoPlayer({ channel, onClose }) {
     };
   }, [channel, onClose]);
 
-  // reset quand on change de chaîne
   useEffect(() => {
     setIsLocked(false);
     setIsLoading(true);
     setFrameError(false);
     setReader(1);
+    setShowControls(true);
   }, [channel]);
 
-  // FIX PRINCIPAL : timeout anti-bug + reset loading
   useEffect(() => {
     setIsLoading(true);
     setFrameError(false);
 
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 5000); // sécurité si iframe bug
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, [safeUrl]);
 
+  useEffect(() => {
+    if (!showControls) return;
+
+    const timer = setTimeout(() => {
+      setShowControls(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [showControls]);
+
   if (!channel) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 animate-[fadeIn_0.25s_ease-out] bg-black/95 backdrop-blur-sm">
       <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#050505] text-white">
         {/* HEADER */}
-        <div className="border-b border-white/10 bg-black/60 backdrop-blur-2xl">
+        <div
+          className={`border-b border-white/10 bg-black/60 backdrop-blur-2xl transition duration-300 ${
+            showControls ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+        >
           <div className="flex items-center justify-between gap-4 px-4 py-4 md:px-6">
             <div className="min-w-0">
               <p className="mb-1 text-[11px] uppercase tracking-[0.28em] text-zinc-500">
@@ -83,7 +95,11 @@ export default function VideoPlayer({ channel, onClose }) {
             <div className="flex items-center gap-2">
               {channel?.streamUrl2 && (
                 <button
-                  onClick={() => setReader((prev) => (prev === 1 ? 2 : 1))}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setReader((prev) => (prev === 1 ? 2 : 1));
+                    setShowControls(true);
+                  }}
                   className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.08]"
                 >
                   {reader === 1 ? "Lecteur 2" : "Lecteur 1"}
@@ -91,7 +107,11 @@ export default function VideoPlayer({ channel, onClose }) {
               )}
 
               <button
-                onClick={() => setIsLocked((prev) => !prev)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLocked((prev) => !prev);
+                  setShowControls(true);
+                }}
                 className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                   isLocked
                     ? "border-white/20 bg-white/12 text-white hover:bg-white/18"
@@ -102,8 +122,11 @@ export default function VideoPlayer({ channel, onClose }) {
               </button>
 
               <button
-                onClick={onClose}
-                className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.08]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+                className="hidden rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.08] md:block"
               >
                 Fermer
               </button>
@@ -112,7 +135,11 @@ export default function VideoPlayer({ channel, onClose }) {
         </div>
 
         {/* BANDEAU VPN */}
-        <div className="mx-4 mt-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-center text-sm text-yellow-100">
+        <div
+          className={`mx-4 mt-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-center text-sm text-yellow-100 transition duration-300 ${
+            showControls ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+        >
           Si la vidéo ne fonctionne pas ou affiche <b>“stream offline”</b>,
           utilisez NordVPN avec une localisation aux USA, puis rechargez le
           lecteur.
@@ -128,9 +155,12 @@ export default function VideoPlayer({ channel, onClose }) {
             </div>
           </div>
         ) : (
-          <div className="relative flex-1 bg-black">
-            <div className="absolute inset-0 flex items-center justify-center p-4 md:p-6">
-              <div className="relative h-[85%] w-[95%] md:h-[80%] md:w-[85%] overflow-hidden rounded-[24px] border border-white/10 bg-black shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+          <div
+            className="relative flex-1 bg-black"
+            onClick={() => setShowControls((prev) => !prev)}
+          >
+            <div className="absolute inset-0 flex items-center justify-center p-3 md:p-6">
+              <div className="relative h-[88%] w-[97%] overflow-hidden rounded-[22px] border border-white/10 bg-black shadow-[0_20px_60px_rgba(0,0,0,0.55)] md:h-[80%] md:w-[85%] md:rounded-[24px]">
                 <iframe
                   key={safeUrl}
                   title={channel.name}
@@ -150,16 +180,36 @@ export default function VideoPlayer({ channel, onClose }) {
                   }}
                 />
 
-                {/* LOCK */}
-                {isLocked && (
-                  <div className="absolute inset-0 z-10 bg-transparent" />
+                {/* BOUTON FERMER MOBILE FLOTTANT */}
+                {showControls && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClose();
+                    }}
+                    className="absolute left-4 top-4 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-black/70 text-xl text-white backdrop-blur-md transition hover:bg-black/90 md:hidden"
+                  >
+                    ×
+                  </button>
                 )}
 
-                {/* LOADING FIX */}
+                {/* LOCK */}
+                {isLocked && (
+                  <div
+                    className="absolute inset-0 z-10 bg-transparent"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowControls(true);
+                    }}
+                  />
+                )}
+
+                {/* LOADING */}
                 {isLoading && (
-                  <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/65 backdrop-blur-sm">
-                    <div className="rounded-2xl border border-white/10 bg-zinc-950/90 px-5 py-4 text-sm text-zinc-200 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
-                      Chargement du lecteur…
+                  <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-md">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                      <p className="text-sm text-zinc-300">Chargement...</p>
                     </div>
                   </div>
                 )}
@@ -181,7 +231,11 @@ export default function VideoPlayer({ channel, onClose }) {
               </div>
             </div>
 
-            <div className="pointer-events-none absolute bottom-6 left-6 z-20 hidden rounded-full border border-white/10 bg-black/50 px-4 py-2 text-xs uppercase tracking-[0.25em] text-zinc-300 backdrop-blur-md md:block">
+            <div
+              className={`pointer-events-none absolute bottom-6 left-6 z-20 hidden rounded-full border border-white/10 bg-black/50 px-4 py-2 text-xs uppercase tracking-[0.25em] text-zinc-300 backdrop-blur-md transition duration-300 md:block ${
+                showControls ? "opacity-100" : "opacity-0"
+              }`}
+            >
               EvrardFoot Player
             </div>
           </div>

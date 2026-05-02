@@ -16,8 +16,7 @@ export default function VideoPlayer({ channel, onClose }) {
     if (!rawUrl) return "";
 
     try {
-      const url = new URL(rawUrl);
-      return url.href;
+      return new URL(rawUrl).href;
     } catch {
       return "";
     }
@@ -73,7 +72,6 @@ export default function VideoPlayer({ channel, onClose }) {
   return (
     <div className="fixed inset-0 z-50 animate-[fadeIn_0.25s_ease-out] bg-black/95 backdrop-blur-sm">
       <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#050505] text-white">
-        {/* HEADER */}
         <div
           className={`border-b border-white/10 bg-black/60 backdrop-blur-2xl transition duration-300 ${
             showControls ? "opacity-100" : "pointer-events-none opacity-0"
@@ -136,7 +134,6 @@ export default function VideoPlayer({ channel, onClose }) {
           </div>
         </div>
 
-        {/* BANDEAU VPN */}
         <div
           className={`mx-4 mt-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-center text-sm text-yellow-100 transition duration-300 ${
             showControls ? "opacity-100" : "pointer-events-none opacity-0"
@@ -149,7 +146,7 @@ export default function VideoPlayer({ channel, onClose }) {
 
         {!safeUrl ? (
           <div className="flex flex-1 items-center justify-center px-6">
-            <div className="max-w-md rounded-[24px] border border-white/10 bg-white/[0.04] px-6 py-5 text-center shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
+            <div className="max-w-md rounded-[24px] border border-white/10 bg-white/[0.04] px-6 py-5 text-center">
               <p className="text-base font-semibold text-white">URL invalide</p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
                 L’adresse du flux est absente ou mal formée pour cette chaîne.
@@ -170,8 +167,8 @@ export default function VideoPlayer({ channel, onClose }) {
                   className={`h-full w-full border-0 bg-black ${
                     isLocked ? "pointer-events-none" : "pointer-events-auto"
                   }`}
-                  referrerPolicy="no-referrer"
-                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                  referrerPolicy="origin"
+                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-read; clipboard-write; web-share"
                   allowFullScreen
                   loading="eager"
                   onLoad={() => setIsLoading(false)}
@@ -181,7 +178,6 @@ export default function VideoPlayer({ channel, onClose }) {
                   }}
                 />
 
-                {/* BOUTON FERMER MOBILE FLOTTANT */}
                 {showControls && (
                   <button
                     onClick={(e) => {
@@ -194,7 +190,6 @@ export default function VideoPlayer({ channel, onClose }) {
                   </button>
                 )}
 
-                {/* LOCK */}
                 {isLocked && (
                   <div
                     className="absolute inset-0 z-10 bg-transparent"
@@ -205,7 +200,6 @@ export default function VideoPlayer({ channel, onClose }) {
                   />
                 )}
 
-                {/* LOADING */}
                 {isLoading && (
                   <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-md">
                     <div className="flex flex-col items-center gap-3">
@@ -215,10 +209,9 @@ export default function VideoPlayer({ channel, onClose }) {
                   </div>
                 )}
 
-                {/* ERROR */}
                 {frameError && (
                   <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 px-6">
-                    <div className="max-w-md rounded-[24px] border border-white/10 bg-white/[0.04] px-6 py-5 text-center shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
+                    <div className="max-w-md rounded-[24px] border border-white/10 bg-white/[0.04] px-6 py-5 text-center">
                       <p className="text-base font-semibold text-white">
                         Lecture intégrée impossible
                       </p>

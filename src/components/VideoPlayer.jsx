@@ -10,8 +10,8 @@ export default function VideoPlayer({ channel, onClose }) {
   const safeUrl = useMemo(() => {
     const rawUrl =
       reader === 1
-        ? channel?.streamUrl2 || channel?.streamUrl
-        : channel?.streamUrl;
+        ? channel?.streamUrl
+        : channel?.streamUrl2 || channel?.streamUrl;
 
     if (!rawUrl) return "";
 
@@ -84,9 +84,11 @@ export default function VideoPlayer({ channel, onClose }) {
               <p className="mb-1 text-[11px] uppercase tracking-[0.28em] text-zinc-500">
                 Lecture en cours
               </p>
+
               <h2 className="truncate text-lg font-semibold tracking-tight text-white md:text-xl">
                 {channel.name}
               </h2>
+
               <p className="truncate text-sm text-zinc-400">
                 {channel.category} — Lecteur {reader}
               </p>
@@ -140,9 +142,9 @@ export default function VideoPlayer({ channel, onClose }) {
             showControls ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
-          Si la vidéo ne fonctionne pas ou affiche <b>“stream offline”</b>,
-          utilisez NordVPN avec une localisation aux USA, puis rechargez le
-          lecteur.
+          Si le <b>Lecteur 1</b> ne fonctionne pas, essayez NordVPN avec une
+          localisation en France. Si le <b>Lecteur 2</b> ne fonctionne pas,
+          essayez NordVPN avec une localisation aux USA.
         </div>
 
         {!safeUrl ? (
@@ -169,7 +171,6 @@ export default function VideoPlayer({ channel, onClose }) {
                     isLocked ? "pointer-events-none" : "pointer-events-auto"
                   }`}
                   referrerPolicy="no-referrer"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
                   loading="eager"
@@ -222,8 +223,9 @@ export default function VideoPlayer({ channel, onClose }) {
                         Lecture intégrée impossible
                       </p>
                       <p className="mt-2 text-sm leading-6 text-zinc-400">
-                        Cette chaîne refuse probablement l’affichage dans une
-                        iframe ou bloque l’intégration externe.
+                        Essayez l’autre lecteur. Certains lecteurs refusent
+                        l’affichage intégré selon le navigateur ou la
+                        localisation VPN.
                       </p>
                     </div>
                   </div>

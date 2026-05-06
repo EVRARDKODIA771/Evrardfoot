@@ -128,31 +128,39 @@ export default function VideoPlayer({ channel, onClose }) {
 
             <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10">
 
-              {/* 🔥 IFRAME SÉCURISÉE */}
+              {/* IFRAME */}
               {!forceFallback && !frameError && (
-                <iframe
-                  key={safeUrl}
-                  src={safeUrl}
-                  title={channel.name}
-                  className="h-full w-full border-0 bg-black"
+                <>
+                  <iframe
+                    key={safeUrl}
+                    src={safeUrl}
+                    title={channel.name}
+                    className={`h-full w-full border-0 bg-black ${
+                      isLocked ? "pointer-events-auto" : "pointer-events-none"
+                    }`}
+                    referrerPolicy="origin"
+                    allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *"
+                    allowFullScreen
+                    loading="eager"
+                    onLoad={() => setIsLoading(false)}
+                    onError={() => {
+                      setFrameError(true);
+                      setIsLoading(false);
+                    }}
+                  />
 
-                  referrerPolicy="origin"
-
-                  // 🔥 BLOCAGE PUBS / REDIRECT
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-
-                  // 🔥 AUTORISATIONS VIDÉO UNIQUEMENT
-                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-
-                  allowFullScreen
-                  loading="eager"
-
-                  onLoad={() => setIsLoading(false)}
-                  onError={() => {
-                    setFrameError(true);
-                    setIsLoading(false);
-                  }}
-                />
+                  {/* 🔥 ANTI PUB CLICK OVERLAY */}
+                  {!isLocked && (
+                    <div
+                      className="absolute inset-0 z-20 bg-transparent cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsLocked(true);
+                        setShowControls(true);
+                      }}
+                    />
+                  )}
+                </>
               )}
 
               {/* LOADER */}
@@ -170,7 +178,7 @@ export default function VideoPlayer({ channel, onClose }) {
                   </p>
 
                   <p className="text-sm text-zinc-400 mt-2">
-                    Ce site bloque les redirections et popups → sécurité activée
+                    Ce site bloque l’intégration ou tente des redirections
                   </p>
 
                   <div className="mt-4 flex gap-3 flex-wrap justify-center">

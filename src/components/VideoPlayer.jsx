@@ -82,19 +82,17 @@ export default function VideoPlayer({ channel, onClose }) {
 
   const openExternal = () => {
     if (!safeUrl) return;
-    window.open(safeUrl, "_blank");
+    window.open(safeUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm">
       <div className="flex h-screen w-screen flex-col bg-[#050505] text-white">
-        
+
         {/* HEADER */}
-        <div
-          className={`border-b border-white/10 bg-black/60 transition ${
-            showControls ? "opacity-100" : "opacity-0"
-          }`}
-        >
+        <div className={`border-b border-white/10 bg-black/60 transition ${
+          showControls ? "opacity-100" : "opacity-0"
+        }`}>
           <div className="flex justify-between px-4 py-4">
             <div>
               <h2 className="text-lg font-semibold">{channel.name}</h2>
@@ -130,20 +128,22 @@ export default function VideoPlayer({ channel, onClose }) {
 
             <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10">
 
-              {/* IFRAME */}
+              {/* 🔥 IFRAME SÉCURISÉE */}
               {!forceFallback && !frameError && (
                 <iframe
                   key={safeUrl}
                   src={safeUrl}
                   title={channel.name}
-                  className="h-full w-full border-0"
-                  
-                  // 🔥 CHANGEMENT IMPORTANT
+                  className="h-full w-full border-0 bg-black"
+
                   referrerPolicy="origin"
 
-                  // 🔥 MAX PERMISSIF
-                  allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *; clipboard-read *; clipboard-write *; web-share *"
-                  
+                  // 🔥 BLOCAGE PUBS / REDIRECT
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+
+                  // 🔥 AUTORISATIONS VIDÉO UNIQUEMENT
+                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+
                   allowFullScreen
                   loading="eager"
 
@@ -170,7 +170,7 @@ export default function VideoPlayer({ channel, onClose }) {
                   </p>
 
                   <p className="text-sm text-zinc-400 mt-2">
-                    Ce site refuse l’intégration iframe sur ton domaine.
+                    Ce site bloque les redirections et popups → sécurité activée
                   </p>
 
                   <div className="mt-4 flex gap-3 flex-wrap justify-center">
@@ -181,11 +181,12 @@ export default function VideoPlayer({ channel, onClose }) {
                     )}
 
                     <button onClick={openExternal} className="btn-primary">
-                      Ouvrir dans navigateur
+                      Ouvrir lecteur
                     </button>
                   </div>
                 </div>
               )}
+
             </div>
           </div>
         </div>

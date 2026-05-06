@@ -6,6 +6,7 @@ export default function VideoPlayer({ channel, onClose }) {
   const [isLoading, setIsLoading] = useState(true);
   const [reader, setReader] = useState(1);
   const [showControls, setShowControls] = useState(true);
+  const [forceFallback, setForceFallback] = useState(false);
 
   const safeUrl = useMemo(() => {
     const rawUrl =
@@ -42,6 +43,7 @@ export default function VideoPlayer({ channel, onClose }) {
     setIsLocked(false);
     setIsLoading(true);
     setFrameError(false);
+    setForceFallback(false);
     setReader(1);
     setShowControls(true);
   }, [channel]);
@@ -49,10 +51,11 @@ export default function VideoPlayer({ channel, onClose }) {
   useEffect(() => {
     setIsLoading(true);
     setFrameError(false);
+    setForceFallback(false);
 
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 5000);
+    }, 6000);
 
     return () => clearTimeout(timer);
   }, [safeUrl]);
@@ -62,12 +65,25 @@ export default function VideoPlayer({ channel, onClose }) {
 
     const timer = setTimeout(() => {
       setShowControls(false);
-    }, 3000);
+    }, 3500);
 
     return () => clearTimeout(timer);
   }, [showControls]);
 
   if (!channel) return null;
+
+  const switchReader = () => {
+    setReader((prev) => (prev === 1 ? 2 : 1));
+    setIsLoading(true);
+    setFrameError(false);
+    setForceFallback(false);
+    setShowControls(true);
+  };
+
+  const openExternal = () => {
+    if (!safeUrl) return;
+    window.open(safeUrl, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className="fixed inset-0 z-50 animate-[fadeIn_0.25s_ease-out] bg-black/95 backdrop-blur-sm">
@@ -97,14 +113,25 @@ export default function VideoPlayer({ channel, onClose }) {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setReader((prev) => (prev === 1 ? 2 : 1));
-                    setShowControls(true);
+                    switchReader();
                   }}
                   className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.08]"
                 >
                   {reader === 1 ? "Lecteur 2" : "Lecteur 1"}
                 </button>
               )}
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setForceFallback(true);
+                  setIsLoading(false);
+                  setShowControls(true);
+                }}
+                className="hidden rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.08] md:block"
+              >
+                Mode externe
+              </button>
 
               <button
                 onClick={(e) => {
@@ -160,23 +187,27 @@ export default function VideoPlayer({ channel, onClose }) {
           >
             <div className="absolute inset-0 flex items-center justify-center p-3 md:p-6">
               <div className="relative h-[88%] w-[97%] overflow-hidden rounded-[22px] border border-white/10 bg-black shadow-[0_20px_60px_rgba(0,0,0,0.55)] md:h-[80%] md:w-[85%] md:rounded-[24px]">
-                <iframe
-                  key={safeUrl}
-                  title={channel.name}
-                  src={safeUrl}
-                  className={`h-full w-full border-0 bg-black ${
-                    isLocked ? "pointer-events-none" : "pointer-events-auto"
-                  }`}
-                  referrerPolicy="origin"
-                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-read; clipboard-write; web-share"
-                  allowFullScreen
-                  loading="eager"
-                  onLoad={() => setIsLoading(false)}
-                  onError={() => {
-                    setFrameError(true);
-                    setIsLoading(false);
-                  }}
-                />
+                {!forceFallback && !frameError && (
+                  <iframe
+                    key={safeUrl}
+                    title={channel.name}
+                    src={safeUrl}
+                    className={`h-full w-full border-0 bg-black ${
+                      isLocked ? "pointer-events-none" : "pointer-events-auto"
+                    }`}
+                    referrerPolicy="no-referrer"
+                    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                    loading="eager"
+                    onLoad={() => {
+                      setIsLoading(false);
+                    }}
+                    onError={() => {
+                      setFrameError(true);
+                      setIsLoading(false);
+                    }}
+                  />
+                )}
 
                 {showControls && (
                   <button
@@ -190,7 +221,7 @@ export default function VideoPlayer({ channel, onClose }) {
                   </button>
                 )}
 
-                {isLocked && (
+                {isLocked && !forceFallback && !frameError && (
                   <div
                     className="absolute inset-0 z-10 bg-transparent"
                     onClick={(e) => {
@@ -200,7 +231,7 @@ export default function VideoPlayer({ channel, onClose }) {
                   />
                 )}
 
-                {isLoading && (
+                {isLoading && !forceFallback && !frameError && (
                   <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-md">
                     <div className="flex flex-col items-center gap-3">
                       <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
@@ -209,17 +240,42 @@ export default function VideoPlayer({ channel, onClose }) {
                   </div>
                 )}
 
-                {frameError && (
-                  <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 px-6">
+                {(frameError || forceFallback) && (
+                  <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/95 px-6">
                     <div className="max-w-md rounded-[24px] border border-white/10 bg-white/[0.04] px-6 py-5 text-center">
                       <p className="text-base font-semibold text-white">
                         Lecture intégrée impossible
                       </p>
+
                       <p className="mt-2 text-sm leading-6 text-zinc-400">
-                        Essayez l’autre lecteur. Certains lecteurs refusent
-                        l’affichage intégré selon le navigateur ou la
-                        localisation VPN.
+                        Ce lecteur fonctionne parfois directement dans le
+                        navigateur, mais refuse l’affichage intégré dans une
+                        iframe sur certains appareils ou navigateurs.
                       </p>
+
+                      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                        {channel?.streamUrl2 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              switchReader();
+                            }}
+                            className="rounded-xl border border-white/10 bg-white/[0.06] px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                          >
+                            Essayer lecteur {reader === 1 ? "2" : "1"}
+                          </button>
+                        )}
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openExternal();
+                          }}
+                          className="rounded-xl bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
+                        >
+                          Ouvrir le lecteur
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

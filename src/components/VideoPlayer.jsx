@@ -6,6 +6,7 @@ const BLOCKED_DOMAINS = [
   "googlesyndication.com",
   "google-analytics.com",
   "popads.net",
+  "popcash.net",
   "propellerads.com",
   "adsterra.com",
   "onclickmega.com",
@@ -19,7 +20,6 @@ export default function VideoPlayer({ channel, onClose }) {
   const [frameError, setFrameError] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [shieldActive, setShieldActive] = useState(true);
-  const [compatMode, setCompatMode] = useState(false);
 
   const safeUrl = useMemo(() => {
     const rawUrl =
@@ -71,7 +71,6 @@ export default function VideoPlayer({ channel, onClose }) {
     setFrameError(false);
     setShowControls(true);
     setShieldActive(true);
-    setCompatMode(false);
   }, [channel]);
 
   useEffect(() => {
@@ -84,7 +83,7 @@ export default function VideoPlayer({ channel, onClose }) {
     }, 8000);
 
     return () => clearTimeout(timer);
-  }, [safeUrl, compatMode]);
+  }, [safeUrl]);
 
   useEffect(() => {
     if (!showControls) return;
@@ -113,11 +112,6 @@ export default function VideoPlayer({ channel, onClose }) {
     setShieldActive(true);
   };
 
-  const openExternal = () => {
-    if (!safeUrl) return;
-    window.open(safeUrl, "_blank", "noopener,noreferrer");
-  };
-
   if (!channel) return null;
 
   return (
@@ -133,7 +127,6 @@ export default function VideoPlayer({ channel, onClose }) {
               <h2 className="text-lg font-semibold">{channel.name}</h2>
               <p className="text-sm text-zinc-400">
                 {channel.category} — Lecteur {reader}
-                {compatMode ? " — Mode compatibilité" : " — Mode sécurisé"}
               </p>
             </div>
 
@@ -146,13 +139,6 @@ export default function VideoPlayer({ channel, onClose }) {
                   {reader === 1 ? "Lecteur 2" : "Lecteur 1"}
                 </button>
               )}
-
-              <button
-                onClick={() => setCompatMode((v) => !v)}
-                className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
-              >
-                {compatMode ? "Mode sécurisé" : "Mode compatibilité"}
-              </button>
 
               <button
                 onClick={onClose}
@@ -172,40 +158,21 @@ export default function VideoPlayer({ channel, onClose }) {
             <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-black">
               {!frameError && safeUrl && (
                 <>
-                  {compatMode ? (
-                    <iframe
-                      key={`compat-${safeUrl}`}
-                      src={safeUrl}
-                      title={channel.name}
-                      className="h-full w-full border-0 bg-black"
-                      loading="eager"
-                      allowFullScreen
-                      referrerPolicy="no-referrer"
-                      allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                      onLoad={() => setIsLoading(false)}
-                      onError={() => {
-                        setFrameError(true);
-                        setIsLoading(false);
-                      }}
-                    />
-                  ) : (
-                    <iframe
-                      key={`safe-${safeUrl}`}
-                      src={safeUrl}
-                      title={channel.name}
-                      className="h-full w-full border-0 bg-black"
-                      loading="eager"
-                      allowFullScreen
-                      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-                      referrerPolicy="no-referrer"
-                      allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                      onLoad={() => setIsLoading(false)}
-                      onError={() => {
-                        setFrameError(true);
-                        setIsLoading(false);
-                      }}
-                    />
-                  )}
+                  <iframe
+                    key={safeUrl}
+                    src={safeUrl}
+                    title={channel.name}
+                    className="h-full w-full border-0 bg-black"
+                    loading="eager"
+                    allowFullScreen
+                    referrerPolicy="no-referrer"
+                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                    onLoad={() => setIsLoading(false)}
+                    onError={() => {
+                      setFrameError(true);
+                      setIsLoading(false);
+                    }}
+                  />
 
                   {shieldActive && (
                     <div
@@ -233,12 +200,11 @@ export default function VideoPlayer({ channel, onClose }) {
               {(frameError || !safeUrl) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6 text-center">
                   <p className="text-lg font-semibold">
-                    Lecture protégée bloquée
+                    Lecture indisponible
                   </p>
 
                   <p className="mt-2 max-w-md text-sm text-zinc-400">
-                    Ce lecteur refuse probablement le sandbox ou tente
-                    d’utiliser des redirections interdites.
+                    Ce lecteur est inaccessible ou bloqué.
                   </p>
 
                   <div className="mt-5 flex flex-wrap justify-center gap-3">
@@ -252,21 +218,10 @@ export default function VideoPlayer({ channel, onClose }) {
                     )}
 
                     <button
-                      onClick={() => {
-                        setCompatMode(true);
-                        setFrameError(false);
-                        setIsLoading(true);
-                      }}
-                      className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
+                      onClick={onClose}
+                      className="rounded-lg bg-red-600 px-4 py-2 hover:bg-red-500"
                     >
-                      Mode compatibilité
-                    </button>
-
-                    <button
-                      onClick={openExternal}
-                      className="rounded-lg bg-blue-600 px-4 py-2 hover:bg-blue-500"
-                    >
-                      Ouvrir quand même
+                      Fermer
                     </button>
                   </div>
                 </div>

@@ -1,12 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 
+const BLOCKED_DOMAINS = [
+  "doubleclick.net",
+  "adservice.google.com",
+  "googlesyndication.com",
+  "google-analytics.com",
+  "popads.net",
+  "propellerads.com",
+  "adsterra.com",
+  "onclickmega.com",
+  "taboola.com",
+  "outbrain.com",
+];
+
 export default function VideoPlayer({ channel, onClose }) {
-  const [frameError, setFrameError] = useState(false);
-  const [isLocked, setIsLocked] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [reader, setReader] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [frameError, setFrameError] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [forceFallback, setForceFallback] = useState(false);
+  const [shieldActive, setShieldActive] = useState(true);
+  const [compatMode, setCompatMode] = useState(false);
 
   const safeUrl = useMemo(() => {
     const rawUrl =
@@ -19,18 +32,8 @@ export default function VideoPlayer({ channel, onClose }) {
     try {
       const url = new URL(rawUrl);
 
-      // 🔥 BLOQUE CERTAINS DOMAINES CONNUS DE PUBS
-      const blockedDomains = [
-        "doubleclick.net",
-        "adservice.google.com",
-        "popads.net",
-        "propellerads.com",
-        "adsterra.com",
-        "onclickmega.com",
-      ];
-
-      const blocked = blockedDomains.some((d) =>
-        url.hostname.includes(d)
+      const blocked = BLOCKED_DOMAINS.some((domain) =>
+        url.hostname.includes(domain)
       );
 
       if (blocked) return "";
@@ -48,42 +51,40 @@ export default function VideoPlayer({ channel, onClose }) {
       if (e.key === "Escape") onClose();
     };
 
-    const preventContextMenu = (e) => {
-      e.preventDefault();
-    };
+    const blockContextMenu = (e) => e.preventDefault();
 
     document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("contextmenu", preventContextMenu);
+    document.addEventListener("contextmenu", blockContextMenu);
 
     document.body.style.overflow = "hidden";
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("contextmenu", preventContextMenu);
+      document.removeEventListener("contextmenu", blockContextMenu);
       document.body.style.overflow = "";
     };
   }, [channel, onClose]);
 
   useEffect(() => {
-    setIsLocked(false);
+    setReader(1);
     setIsLoading(true);
     setFrameError(false);
-    setForceFallback(false);
-    setReader(1);
     setShowControls(true);
+    setShieldActive(true);
+    setCompatMode(false);
   }, [channel]);
 
   useEffect(() => {
     setIsLoading(true);
     setFrameError(false);
-    setForceFallback(false);
+    setShieldActive(true);
 
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 7000);
+    }, 8000);
 
     return () => clearTimeout(timer);
-  }, [safeUrl]);
+  }, [safeUrl, compatMode]);
 
   useEffect(() => {
     if (!showControls) return;
@@ -95,72 +96,67 @@ export default function VideoPlayer({ channel, onClose }) {
     return () => clearTimeout(timer);
   }, [showControls]);
 
-  if (!channel) return null;
+  const unlockTemporarily = () => {
+    setShieldActive(false);
+    setShowControls(true);
+
+    setTimeout(() => {
+      setShieldActive(true);
+    }, 7000);
+  };
 
   const switchReader = () => {
     setReader((prev) => (prev === 1 ? 2 : 1));
-
     setIsLoading(true);
     setFrameError(false);
-    setForceFallback(false);
     setShowControls(true);
-    setIsLocked(false);
+    setShieldActive(true);
   };
 
   const openExternal = () => {
     if (!safeUrl) return;
-
-    window.open(
-      safeUrl,
-      "_blank",
-      "noopener,noreferrer"
-    );
+    window.open(safeUrl, "_blank", "noopener,noreferrer");
   };
+
+  if (!channel) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black">
       <div className="flex h-screen w-screen flex-col bg-black text-white">
-
-        {/* HEADER */}
         <div
-          className={`border-b border-white/10 bg-black/80 transition duration-300 ${
+          className={`border-b border-white/10 bg-black/90 transition duration-300 ${
             showControls ? "opacity-100" : "opacity-0"
           }`}
         >
-          <div className="flex justify-between px-4 py-4">
+          <div className="flex justify-between gap-3 px-4 py-4">
             <div>
-              <h2 className="text-lg font-semibold">
-                {channel.name}
-              </h2>
-
+              <h2 className="text-lg font-semibold">{channel.name}</h2>
               <p className="text-sm text-zinc-400">
                 {channel.category} — Lecteur {reader}
+                {compatMode ? " — Mode compatibilité" : " — Mode sécurisé"}
               </p>
             </div>
 
-            <div className="flex gap-2 flex-wrap">
-
+            <div className="flex flex-wrap gap-2">
               {channel?.streamUrl2 && (
                 <button
                   onClick={switchReader}
-                  className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700"
+                  className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
                 >
-                  {reader === 1
-                    ? "Lecteur 2"
-                    : "Lecteur 1"}
+                  {reader === 1 ? "Lecteur 2" : "Lecteur 1"}
                 </button>
               )}
 
               <button
-                onClick={() => setForceFallback(true)}
-                className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 hidden md:block"
+                onClick={() => setCompatMode((v) => !v)}
+                className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
               >
-                Mode externe
+                {compatMode ? "Mode sécurisé" : "Mode compatibilité"}
               </button>
 
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500"
+                className="rounded-lg bg-red-600 px-4 py-2 hover:bg-red-500"
               >
                 Fermer
               </button>
@@ -168,122 +164,113 @@ export default function VideoPlayer({ channel, onClose }) {
           </div>
         </div>
 
-        {/* PLAYER */}
         <div
           className="relative flex-1 bg-black"
           onMouseMove={() => setShowControls(true)}
         >
           <div className="absolute inset-0 p-2 md:p-4">
-
             <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-black">
-
-              {/* IFRAME */}
-              {!forceFallback && !frameError && safeUrl && (
+              {!frameError && safeUrl && (
                 <>
-                  <iframe
-                    key={safeUrl}
-                    src={safeUrl}
-                    title={channel.name}
-                    className={`h-full w-full border-0 bg-black ${
-                      isLocked
-                        ? "pointer-events-auto"
-                        : "pointer-events-none"
-                    }`}
-                    loading="eager"
-                    allowFullScreen
+                  {compatMode ? (
+                    <iframe
+                      key={`compat-${safeUrl}`}
+                      src={safeUrl}
+                      title={channel.name}
+                      className="h-full w-full border-0 bg-black"
+                      loading="eager"
+                      allowFullScreen
+                      referrerPolicy="no-referrer"
+                      allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                      onLoad={() => setIsLoading(false)}
+                      onError={() => {
+                        setFrameError(true);
+                        setIsLoading(false);
+                      }}
+                    />
+                  ) : (
+                    <iframe
+                      key={`safe-${safeUrl}`}
+                      src={safeUrl}
+                      title={channel.name}
+                      className="h-full w-full border-0 bg-black"
+                      loading="eager"
+                      allowFullScreen
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                      referrerPolicy="no-referrer"
+                      allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                      onLoad={() => setIsLoading(false)}
+                      onError={() => {
+                        setFrameError(true);
+                        setIsLoading(false);
+                      }}
+                    />
+                  )}
 
-                    // 🔥 IMPORTANT
-                    sandbox="
-                      allow-scripts
-                      allow-same-origin
-                      allow-forms
-                      allow-presentation
-                    "
-
-                    // 🔥 PAS de allow-popups
-                    // 🔥 PAS de allow-top-navigation
-
-                    referrerPolicy="no-referrer"
-
-                    allow="
-                      autoplay;
-                      encrypted-media;
-                      fullscreen;
-                      picture-in-picture
-                    "
-
-                    onLoad={() => {
-                      setIsLoading(false);
-                    }}
-
-                    onError={() => {
-                      setFrameError(true);
-                      setIsLoading(false);
-                    }}
-                  />
-
-                  {/* OVERLAY ANTI-PUB */}
-                  {!isLocked && (
+                  {shieldActive && (
                     <div
-                      className="absolute inset-0 z-20 cursor-pointer"
+                      className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center bg-black/5"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-
-                        setIsLocked(true);
-                        setShowControls(true);
+                        unlockTemporarily();
                       }}
-                    />
+                    >
+                      <div className="rounded-xl bg-black/70 px-5 py-3 text-sm text-white">
+                        Cliquer pour contrôler le lecteur pendant 7 secondes
+                      </div>
+                    </div>
                   )}
                 </>
               )}
 
-              {/* LOADING */}
-              {isLoading &&
-                !forceFallback &&
-                !frameError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-                    <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  </div>
-                )}
+              {isLoading && !frameError && safeUrl && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80">
+                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                </div>
+              )}
 
-              {/* FALLBACK */}
-              {(frameError ||
-                forceFallback ||
-                !safeUrl) && (
+              {(frameError || !safeUrl) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6 text-center">
-
                   <p className="text-lg font-semibold">
                     Lecture protégée bloquée
                   </p>
 
-                  <p className="mt-2 text-sm text-zinc-400 max-w-md">
-                    Ce lecteur tente probablement
-                    d’ouvrir des pubs, popups ou
-                    redirections interdites.
+                  <p className="mt-2 max-w-md text-sm text-zinc-400">
+                    Ce lecteur refuse probablement le sandbox ou tente
+                    d’utiliser des redirections interdites.
                   </p>
 
                   <div className="mt-5 flex flex-wrap justify-center gap-3">
-
                     {channel?.streamUrl2 && (
                       <button
                         onClick={switchReader}
-                        className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700"
+                        className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
                       >
                         Essayer autre lecteur
                       </button>
                     )}
 
                     <button
+                      onClick={() => {
+                        setCompatMode(true);
+                        setFrameError(false);
+                        setIsLoading(true);
+                      }}
+                      className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
+                    >
+                      Mode compatibilité
+                    </button>
+
+                    <button
                       onClick={openExternal}
-                      className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500"
+                      className="rounded-lg bg-blue-600 px-4 py-2 hover:bg-blue-500"
                     >
                       Ouvrir quand même
                     </button>
                   </div>
                 </div>
               )}
-
             </div>
           </div>
         </div>

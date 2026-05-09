@@ -20,6 +20,7 @@ export default function VideoPlayer({ channel, onClose }) {
   const [frameError, setFrameError] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [shieldActive, setShieldActive] = useState(true);
+  const [unlockCount, setUnlockCount] = useState(0);
 
   const safeUrl = useMemo(() => {
     const rawUrl =
@@ -71,12 +72,14 @@ export default function VideoPlayer({ channel, onClose }) {
     setFrameError(false);
     setShowControls(true);
     setShieldActive(true);
+    setUnlockCount(0);
   }, [channel]);
 
   useEffect(() => {
     setIsLoading(true);
     setFrameError(false);
     setShieldActive(true);
+    setUnlockCount(0);
 
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -95,13 +98,14 @@ export default function VideoPlayer({ channel, onClose }) {
     return () => clearTimeout(timer);
   }, [showControls]);
 
-  const unlockTemporarily = () => {
+  const unlockVeryShort = () => {
+    setUnlockCount((prev) => prev + 1);
     setShieldActive(false);
     setShowControls(true);
 
     setTimeout(() => {
       setShieldActive(true);
-    }, 7000);
+    }, 2000);
   };
 
   const switchReader = () => {
@@ -110,6 +114,7 @@ export default function VideoPlayer({ channel, onClose }) {
     setFrameError(false);
     setShowControls(true);
     setShieldActive(true);
+    setUnlockCount(0);
   };
 
   if (!channel) return null;
@@ -119,7 +124,7 @@ export default function VideoPlayer({ channel, onClose }) {
       <div className="flex h-screen w-screen flex-col bg-black text-white">
         <div
           className={`border-b border-white/10 bg-black/90 transition duration-300 ${
-            showControls ? "opacity-100" : "opacity-0"
+            showControls ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
         >
           <div className="flex justify-between gap-3 px-4 py-4">
@@ -153,6 +158,7 @@ export default function VideoPlayer({ channel, onClose }) {
         <div
           className="relative flex-1 bg-black"
           onMouseMove={() => setShowControls(true)}
+          onClick={() => setShowControls(true)}
         >
           <div className="absolute inset-0 p-2 md:p-4">
             <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-black">
@@ -176,15 +182,28 @@ export default function VideoPlayer({ channel, onClose }) {
 
                   {shieldActive && (
                     <div
-                      className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center bg-black/5"
+                      className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center bg-black/10 backdrop-blur-[1px]"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        unlockTemporarily();
+                        unlockVeryShort();
                       }}
                     >
-                      <div className="rounded-xl bg-black/70 px-5 py-3 text-sm text-white">
-                        Cliquer pour contrôler le lecteur pendant 7 secondes
+                      <div className="max-w-sm rounded-xl bg-black/80 px-5 py-4 text-center text-sm text-white shadow-xl">
+                        <p className="font-semibold">
+                          Protection anti-pub active
+                        </p>
+
+                        <p className="mt-1 text-xs text-zinc-300">
+                          Clique ici, puis active rapidement le son dans le lecteur.
+                          La protection revient automatiquement après 2 secondes.
+                        </p>
+
+                        {unlockCount > 0 && (
+                          <p className="mt-2 text-xs text-yellow-300">
+                            Déverrouillages : {unlockCount}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -199,9 +218,7 @@ export default function VideoPlayer({ channel, onClose }) {
 
               {(frameError || !safeUrl) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6 text-center">
-                  <p className="text-lg font-semibold">
-                    Lecture indisponible
-                  </p>
+                  <p className="text-lg font-semibold">Lecture indisponible</p>
 
                   <p className="mt-2 max-w-md text-sm text-zinc-400">
                     Ce lecteur est inaccessible ou bloqué.

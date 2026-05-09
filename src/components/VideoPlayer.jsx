@@ -100,6 +100,7 @@ export default function VideoPlayer({ channel, onClose }) {
 
   const unlockVeryShort = () => {
     setUnlockCount((prev) => prev + 1);
+
     setShieldActive(false);
     setShowControls(true);
 
@@ -110,6 +111,7 @@ export default function VideoPlayer({ channel, onClose }) {
 
   const switchReader = () => {
     setReader((prev) => (prev === 1 ? 2 : 1));
+
     setIsLoading(true);
     setFrameError(false);
     setShowControls(true);
@@ -122,26 +124,37 @@ export default function VideoPlayer({ channel, onClose }) {
   return (
     <div className="fixed inset-0 z-50 bg-black">
       <div className="flex h-screen w-screen flex-col bg-black text-white">
+
+        {/* HEADER */}
         <div
           className={`border-b border-white/10 bg-black/90 transition duration-300 ${
-            showControls ? "opacity-100" : "opacity-0 pointer-events-none"
+            showControls
+              ? "opacity-100"
+              : "opacity-0 pointer-events-none"
           }`}
         >
           <div className="flex justify-between gap-3 px-4 py-4">
+
             <div>
-              <h2 className="text-lg font-semibold">{channel.name}</h2>
+              <h2 className="text-lg font-semibold">
+                {channel.name}
+              </h2>
+
               <p className="text-sm text-zinc-400">
                 {channel.category} — Lecteur {reader}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
+
               {channel?.streamUrl2 && (
                 <button
                   onClick={switchReader}
                   className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
                 >
-                  {reader === 1 ? "Lecteur 2" : "Lecteur 1"}
+                  {reader === 1
+                    ? "Lecteur 2"
+                    : "Lecteur 1"}
                 </button>
               )}
 
@@ -151,17 +164,21 @@ export default function VideoPlayer({ channel, onClose }) {
               >
                 Fermer
               </button>
+
             </div>
           </div>
         </div>
 
+        {/* PLAYER */}
         <div
           className="relative flex-1 bg-black"
           onMouseMove={() => setShowControls(true)}
           onClick={() => setShowControls(true)}
         >
           <div className="absolute inset-0 p-2 md:p-4">
+
             <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-black">
+
               {!frameError && safeUrl && (
                 <>
                   <iframe
@@ -172,59 +189,59 @@ export default function VideoPlayer({ channel, onClose }) {
                     loading="eager"
                     allowFullScreen
                     referrerPolicy="no-referrer"
-                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                    onLoad={() => setIsLoading(false)}
+                    allow="
+                      autoplay;
+                      encrypted-media;
+                      fullscreen;
+                      picture-in-picture
+                    "
+                    onLoad={() => {
+                      setIsLoading(false);
+                    }}
                     onError={() => {
                       setFrameError(true);
                       setIsLoading(false);
                     }}
                   />
 
+                  {/* SHIELD */}
                   {shieldActive && (
                     <div
-                      className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center bg-black/10 backdrop-blur-[1px]"
+                      className="absolute inset-0 z-20 cursor-pointer"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+
                         unlockVeryShort();
                       }}
-                    >
-                      <div className="max-w-sm rounded-xl bg-black/80 px-5 py-4 text-center text-sm text-white shadow-xl">
-                        <p className="font-semibold">
-                          Protection anti-pub active
-                        </p>
-
-                        <p className="mt-1 text-xs text-zinc-300">
-                          Clique ici, puis active rapidement le son dans le lecteur.
-                          La protection revient automatiquement après 2 secondes.
-                        </p>
-
-                        {unlockCount > 0 && (
-                          <p className="mt-2 text-xs text-yellow-300">
-                            Déverrouillages : {unlockCount}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                    />
                   )}
                 </>
               )}
 
-              {isLoading && !frameError && safeUrl && (
-                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80">
-                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                </div>
-              )}
+              {/* LOADING */}
+              {isLoading &&
+                !frameError &&
+                safeUrl && (
+                  <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80">
+                    <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  </div>
+                )}
 
+              {/* ERROR */}
               {(frameError || !safeUrl) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6 text-center">
-                  <p className="text-lg font-semibold">Lecture indisponible</p>
+
+                  <p className="text-lg font-semibold">
+                    Lecture indisponible
+                  </p>
 
                   <p className="mt-2 max-w-md text-sm text-zinc-400">
                     Ce lecteur est inaccessible ou bloqué.
                   </p>
 
                   <div className="mt-5 flex flex-wrap justify-center gap-3">
+
                     {channel?.streamUrl2 && (
                       <button
                         onClick={switchReader}
@@ -240,9 +257,11 @@ export default function VideoPlayer({ channel, onClose }) {
                     >
                       Fermer
                     </button>
+
                   </div>
                 </div>
               )}
+
             </div>
           </div>
         </div>

@@ -3,6 +3,12 @@ import ChannelCard from "./components/ChannelCard";
 import VideoPlayer from "./components/VideoPlayer";
 import { channels } from "./data/channels";
 
+const PC_DOWNLOAD_URL =
+  "https://github.com/EVRARDKODIA771/Evrardfoot/releases/download/PC/EvrardFoot_PC.rar";
+
+const ANDROID_DOWNLOAD_URL =
+  "https://github.com/EVRARDKODIA771/Evrardfoot/releases/download/APK/EvrardFoot-1-v1.0.apk";
+
 function slugify(value) {
   return value
     .normalize("NFD")
@@ -12,7 +18,92 @@ function slugify(value) {
     .toLowerCase();
 }
 
+function getPlatformInfo() {
+  const ua = navigator.userAgent.toLowerCase();
+
+  const isElectron = ua.includes("electron");
+
+  const isCapacitor =
+    typeof window !== "undefined" &&
+    (window.Capacitor ||
+      window.capacitor ||
+      ua.includes("capacitor"));
+
+  const isAndroid = ua.includes("android");
+
+  const isDesktop =
+    ua.includes("windows") ||
+    ua.includes("macintosh") ||
+    ua.includes("linux");
+
+  return {
+    isElectron,
+    isCapacitor,
+    isAndroid,
+    isDesktop,
+    isNativeApp: isElectron || isCapacitor,
+  };
+}
+
+function DownloadGate() {
+  const platform = getPlatformInfo();
+
+  const downloadUrl = platform.isAndroid
+    ? ANDROID_DOWNLOAD_URL
+    : PC_DOWNLOAD_URL;
+
+  const buttonText = platform.isAndroid
+    ? "Télécharger l’application Android"
+    : "Télécharger l’application PC";
+
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-6">
+        <img
+          src="/bg.jpeg"
+          alt="football background"
+          className="absolute inset-0 h-full w-full object-cover opacity-30"
+        />
+
+        <div className="absolute inset-0 bg-black/80" />
+
+        <div className="relative z-10 max-w-xl text-center">
+          <h1 className="text-4xl font-black tracking-tight md:text-6xl">
+            EvrardFoot
+          </h1>
+
+          <p className="mt-4 text-lg text-zinc-300">
+            La version web est désactivée.
+          </p>
+
+          <p className="mt-4 text-sm leading-7 text-zinc-400">
+            Pour éviter les pubs, popups et redirections des lecteurs externes,
+            EvrardFoot fonctionne uniquement dans l’application officielle.
+          </p>
+
+          <a
+            href={downloadUrl}
+            className="mt-8 inline-flex rounded-2xl bg-white px-6 py-4 text-sm font-bold text-black transition hover:bg-zinc-200"
+          >
+            {buttonText}
+          </a>
+
+          <p className="mt-4 text-xs text-zinc-500">
+            Installe l’application, puis ouvre EvrardFoot depuis ton appareil.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const platform = getPlatformInfo();
+
+  if (!platform.isNativeApp) {
+    return <DownloadGate />;
+  }
+
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [activeTab, setActiveTab] = useState("home");
@@ -65,7 +156,6 @@ export default function App() {
 
   const displayedChannels = useMemo(() => {
     if (activeTab === "favorites") return favoriteChannels;
-    if (activeTab === "search") return filteredChannels;
     return filteredChannels;
   }, [activeTab, favoriteChannels, filteredChannels]);
 

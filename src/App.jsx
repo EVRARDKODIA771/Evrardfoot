@@ -244,11 +244,12 @@ export default function App() {
   useEffect(() => {
     if (!platform.isTV) return;
 
-    const handleKeyDown = (e) => {
-      if (selectedChannel) {
-        return;
-      }
+    // Très important :
+    // Quand VideoPlayer est ouvert, App.jsx ne doit plus écouter les touches TV.
+    // Sinon il bloque ou perturbe le curseur TV dans VideoPlayer.jsx.
+    if (selectedChannel) return;
 
+    const handleKeyDown = (e) => {
       const key = e.key;
 
       const isBack =
@@ -266,25 +267,16 @@ export default function App() {
         e.keyCode === 23 ||
         e.keyCode === 66;
 
-      if (
-        ![
-          "ArrowUp",
-          "ArrowDown",
-          "ArrowLeft",
-          "ArrowRight",
-          "Enter",
-          "NumpadEnter",
-          "Backspace",
-          "Escape",
-          "BrowserBack",
-          "GoBack",
-        ].includes(key) &&
-        ![4, 13, 23, 66, 461].includes(e.keyCode)
-      ) {
-        return;
-      }
+      const isArrow =
+        key === "ArrowUp" ||
+        key === "ArrowDown" ||
+        key === "ArrowLeft" ||
+        key === "ArrowRight";
+
+      if (!isBack && !isOk && !isArrow) return;
 
       e.preventDefault();
+      e.stopPropagation();
 
       if (isBack) {
         if (window.history.length > 1) {

@@ -116,8 +116,36 @@ export default function App() {
   const [favorites, setFavorites] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [focusedIndex, setFocusedIndex] = useState(0);
+
+  const openChannel = (channel) => {
+    const params = new URLSearchParams();
+    params.set("id", String(channel.id));
+    params.set("name", slugify(channel.name));
+
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.pushState({}, "", newUrl);
+
+    setSelectedChannel(channel);
+
+    setHistory((prev) => {
+      const next = [channel.id, ...prev.filter((id) => id !== channel.id)];
+      return next.slice(0, 12);
+    });
+  };
+
+  const closeChannel = () => {
+    window.history.pushState({}, "", window.location.pathname);
+    setSelectedChannel(null);
+  };
+
+  const toggleFavorite = (channelId) => {
+    setFavorites((prev) =>
+      prev.includes(channelId)
+        ? prev.filter((id) => id !== channelId)
+        : [...prev, channelId]
+    );
+  };
 
   useEffect(() => {
     const savedFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
@@ -173,7 +201,6 @@ export default function App() {
     items.push({
       id: "home",
       type: "tab",
-      label: "Accueil",
       action: () => {
         setActiveTab("home");
         setSearch("");
@@ -183,7 +210,6 @@ export default function App() {
     items.push({
       id: "search",
       type: "tab",
-      label: "Recherche",
       action: () => {
         setActiveTab("search");
       },
@@ -192,7 +218,6 @@ export default function App() {
     items.push({
       id: "favorites",
       type: "tab",
-      label: "Favoris",
       action: () => {
         setActiveTab("favorites");
         setSearch("");
@@ -209,11 +234,10 @@ export default function App() {
     });
 
     return items;
-  }, [displayedChannels, activeTab, search, favorites, history]);
+  }, [displayedChannels]);
 
   useEffect(() => {
     if (!platform.isTV) return;
-
     setFocusedIndex(0);
   }, [activeTab, search, platform.isTV]);
 
@@ -221,6 +245,10 @@ export default function App() {
     if (!platform.isTV) return;
 
     const handleKeyDown = (e) => {
+      if (selectedChannel) {
+        return;
+      }
+
       const key = e.key;
 
       const isBack =
@@ -259,11 +287,6 @@ export default function App() {
       e.preventDefault();
 
       if (isBack) {
-        if (selectedChannel) {
-          closeChannel();
-          return;
-        }
-
         if (window.history.length > 1) {
           window.history.back();
         }
@@ -284,7 +307,8 @@ export default function App() {
       setFocusedIndex((prev) => {
         let next = prev;
 
-        const columns = window.innerWidth >= 1280 ? 4 : window.innerWidth >= 640 ? 2 : 1;
+        const columns =
+          window.innerWidth >= 1280 ? 4 : window.innerWidth >= 640 ? 2 : 1;
 
         if (key === "ArrowRight") {
           next = Math.min(prev + 1, tvItems.length - 1);
@@ -355,35 +379,6 @@ export default function App() {
       window.removeEventListener("popstate", syncFromUrl);
     };
   }, []);
-
-  const openChannel = (channel) => {
-    const params = new URLSearchParams();
-    params.set("id", String(channel.id));
-    params.set("name", slugify(channel.name));
-
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.pushState({}, "", newUrl);
-
-    setSelectedChannel(channel);
-
-    setHistory((prev) => {
-      const next = [channel.id, ...prev.filter((id) => id !== channel.id)];
-      return next.slice(0, 12);
-    });
-  };
-
-  const closeChannel = () => {
-    window.history.pushState({}, "", window.location.pathname);
-    setSelectedChannel(null);
-  };
-
-  const toggleFavorite = (channelId) => {
-    setFavorites((prev) =>
-      prev.includes(channelId)
-        ? prev.filter((id) => id !== channelId)
-        : [...prev, channelId]
-    );
-  };
 
   const sectionTitle =
     activeTab === "favorites"

@@ -25,21 +25,29 @@ function getPlatformInfo() {
 
   const isCapacitor =
     typeof window !== "undefined" &&
-    (window.Capacitor ||
-      window.capacitor ||
-      ua.includes("capacitor"));
+    (window.Capacitor || window.capacitor || ua.includes("capacitor"));
 
   const isAndroid = ua.includes("android");
 
+  const isTV =
+    ua.includes("android tv") ||
+    ua.includes("google tv") ||
+    ua.includes("smart-tv") ||
+    ua.includes("smarttv") ||
+    ua.includes("tv") ||
+    ua.includes("aft") ||
+    ua.includes("bravia") ||
+    ua.includes("tizen") ||
+    ua.includes("webos");
+
   const isDesktop =
-    ua.includes("windows") ||
-    ua.includes("macintosh") ||
-    ua.includes("linux");
+    ua.includes("windows") || ua.includes("macintosh") || ua.includes("linux");
 
   return {
     isElectron,
     isCapacitor,
     isAndroid,
+    isTV,
     isDesktop,
     isNativeApp: isElectron || isCapacitor,
   };
@@ -48,9 +56,7 @@ function getPlatformInfo() {
 function DownloadGate() {
   const platform = getPlatformInfo();
 
-  const downloadUrl = platform.isAndroid
-    ? ANDROID_DOWNLOAD_URL
-    : PC_DOWNLOAD_URL;
+  const downloadUrl = platform.isAndroid ? ANDROID_DOWNLOAD_URL : PC_DOWNLOAD_URL;
 
   const buttonText = platform.isAndroid
     ? "Télécharger l’application Android"
@@ -111,6 +117,11 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [tvCursor, setTvCursor] = useState({
+    x: typeof window !== "undefined" ? window.innerWidth / 2 : 500,
+    y: typeof window !== "undefined" ? window.innerHeight / 2 : 300,
+  });
+
   useEffect(() => {
     const savedFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
     const savedHistory = JSON.parse(
@@ -131,6 +142,68 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("watch_history", JSON.stringify(history));
   }, [history]);
+
+  useEffect(() => {
+    if (!platform.isTV) return;
+
+    const moveAmount = 38;
+
+    const handleKeyDown = (e) => {
+      const tvKeys = [
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight",
+        "Enter",
+      ];
+
+      if (!tvKeys.includes(e.key)) return;
+
+      e.preventDefault();
+
+      setTvCursor((prev) => {
+        let nextX = prev.x;
+        let nextY = prev.y;
+
+        if (e.key === "ArrowUp") nextY -= moveAmount;
+        if (e.key === "ArrowDown") nextY += moveAmount;
+        if (e.key === "ArrowLeft") nextX -= moveAmount;
+        if (e.key === "ArrowRight") nextX += moveAmount;
+
+        if (e.key === "Enter") {
+          const element = document.elementFromPoint(prev.x, prev.y);
+
+          if (element) {
+            const clickable = element.closest(
+              "button, a, input, [role='button']"
+            );
+
+            if (clickable) {
+              clickable.click();
+            } else {
+              element.click();
+            }
+          }
+
+          return prev;
+        }
+
+        nextX = Math.max(8, Math.min(window.innerWidth - 8, nextX));
+        nextY = Math.max(8, Math.min(window.innerHeight - 8, nextY));
+
+        return {
+          x: nextX,
+          y: nextY,
+        };
+      });
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [platform.isTV]);
 
   const hasSearch = search.trim().length > 0;
 
@@ -422,6 +495,26 @@ export default function App() {
           </button>
         </div>
       </nav>
+
+      {platform.isTV && (
+        <div
+          style={{
+            position: "fixed",
+            left: tvCursor.x,
+            top: tvCursor.y,
+            width: "20px",
+            height: "20px",
+            borderRadius: "999px",
+            background: "white",
+            border: "2px solid rgba(0,0,0,0.7)",
+            boxShadow: "0 0 22px rgba(255,255,255,0.95)",
+            transform: "translate(-50%, -50%)",
+            zIndex: 999999,
+            pointerEvents: "none",
+            transition: "left 0.04s linear, top 0.04s linear",
+          }}
+        />
+      )}
 
       {selectedChannel && (
         <VideoPlayer channel={selectedChannel} onClose={closeChannel} />

@@ -53,62 +53,8 @@ function getPlatformInfo() {
   };
 }
 
-function DownloadGate() {
-  const platform = getPlatformInfo();
-
-  const downloadUrl = platform.isAndroid ? ANDROID_DOWNLOAD_URL : PC_DOWNLOAD_URL;
-
-  const buttonText = platform.isAndroid
-    ? "Télécharger l’application Android"
-    : "Télécharger l’application PC";
-
-  return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-6">
-        <img
-          src="/bg.jpeg"
-          alt="football background"
-          className="absolute inset-0 h-full w-full object-cover opacity-30"
-        />
-
-        <div className="absolute inset-0 bg-black/80" />
-
-        <div className="relative z-10 max-w-xl text-center">
-          <h1 className="text-4xl font-black tracking-tight md:text-6xl">
-            EvrardFoot
-          </h1>
-
-          <p className="mt-4 text-lg text-zinc-300">
-            La version web est désactivée.
-          </p>
-
-          <p className="mt-4 text-sm leading-7 text-zinc-400">
-            Pour éviter les pubs, popups et redirections des lecteurs externes,
-            EvrardFoot fonctionne uniquement dans l’application officielle.
-          </p>
-
-          <a
-            href={downloadUrl}
-            className="mt-8 inline-flex rounded-2xl bg-white px-6 py-4 text-sm font-bold text-black transition hover:bg-zinc-200"
-          >
-            {buttonText}
-          </a>
-
-          <p className="mt-4 text-xs text-zinc-500">
-            Installe l’application, puis ouvre EvrardFoot depuis ton appareil.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function App() {
   const platform = getPlatformInfo();
-
-  if (!platform.isNativeApp) {
-    return <DownloadGate />;
-  }
 
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);
@@ -243,10 +189,6 @@ export default function App() {
 
   useEffect(() => {
     if (!platform.isTV) return;
-
-    // Très important :
-    // Quand VideoPlayer est ouvert, App.jsx ne doit plus écouter les touches TV.
-    // Sinon il bloque ou perturbe le curseur TV dans VideoPlayer.jsx.
     if (selectedChannel) return;
 
     const handleKeyDown = (e) => {
@@ -282,17 +224,12 @@ export default function App() {
         if (window.history.length > 1) {
           window.history.back();
         }
-
         return;
       }
 
       if (isOk) {
         const item = tvItems[focusedIndex];
-
-        if (item && typeof item.action === "function") {
-          item.action();
-        }
-
+        if (item && typeof item.action === "function") item.action();
         return;
       }
 
@@ -302,40 +239,27 @@ export default function App() {
         const columns =
           window.innerWidth >= 1280 ? 4 : window.innerWidth >= 640 ? 2 : 1;
 
-        if (key === "ArrowRight") {
-          next = Math.min(prev + 1, tvItems.length - 1);
-        }
-
-        if (key === "ArrowLeft") {
-          next = Math.max(prev - 1, 0);
-        }
+        if (key === "ArrowRight") next = Math.min(prev + 1, tvItems.length - 1);
+        if (key === "ArrowLeft") next = Math.max(prev - 1, 0);
 
         if (key === "ArrowDown") {
-          if (prev < 3) {
-            next = 3;
-          } else {
-            next = Math.min(prev + columns, tvItems.length - 1);
-          }
+          next = prev < 3 ? 3 : Math.min(prev + columns, tvItems.length - 1);
         }
 
         if (key === "ArrowUp") {
-          if (prev >= 3 && prev - columns < 3) {
-            next = 0;
-          } else {
-            next = Math.max(prev - columns, 0);
-          }
+          next =
+            prev >= 3 && prev - columns < 3
+              ? 0
+              : Math.max(prev - columns, 0);
         }
 
         setTimeout(() => {
           const element = document.querySelector(`[data-tv-index="${next}"]`);
-
-          if (element) {
-            element.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-              inline: "center",
-            });
-          }
+          element?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "center",
+          });
         }, 0);
 
         return next;
@@ -400,18 +324,36 @@ export default function App() {
             <p className="text-sm text-zinc-400">Streaming live premium</p>
           </div>
 
-          <div className="w-full md:w-[340px]">
-            <input
-              type="text"
-              placeholder="Rechercher une chaîne..."
-              value={search}
-              onFocus={() => setActiveTab("search")}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setActiveTab("search");
-              }}
-              className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 transition focus:border-white/20 focus:bg-white/[0.06]"
-            />
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="flex gap-2">
+              <a
+                href={PC_DOWNLOAD_URL}
+                className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-black transition hover:bg-zinc-200"
+              >
+                PC
+              </a>
+
+              <a
+                href={ANDROID_DOWNLOAD_URL}
+                className="rounded-xl bg-zinc-800 px-3 py-2 text-xs font-bold text-white transition hover:bg-zinc-700"
+              >
+                Android
+              </a>
+            </div>
+
+            <div className="w-full md:w-[340px]">
+              <input
+                type="text"
+                placeholder="Rechercher une chaîne..."
+                value={search}
+                onFocus={() => setActiveTab("search")}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setActiveTab("search");
+                }}
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 transition focus:border-white/20 focus:bg-white/[0.06]"
+              />
+            </div>
           </div>
         </div>
       </header>
@@ -518,7 +460,10 @@ export default function App() {
                 >
                   <img
                     src={
-                      channel.cover || channel.logo || channel.image || "/bg.jpeg"
+                      channel.cover ||
+                      channel.logo ||
+                      channel.image ||
+                      "/bg.jpeg"
                     }
                     alt={channel.name}
                     className="h-28 w-full bg-black object-contain p-4"

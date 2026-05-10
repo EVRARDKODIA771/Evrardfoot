@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const BLOCKED_DOMAINS = [
   "doubleclick.net",
@@ -20,17 +20,6 @@ export default function VideoPlayer({ channel, onClose }) {
   const [frameError, setFrameError] = useState(false);
   const [showControls, setShowControls] = useState(true);
 
-  const [tvMouse, setTvMouse] = useState({
-    x: typeof window !== "undefined" ? window.innerWidth / 2 : 500,
-    y: typeof window !== "undefined" ? window.innerHeight / 2 : 300,
-  });
-
-  const tvMouseRef = useRef(tvMouse);
-
-  useEffect(() => {
-    tvMouseRef.current = tvMouse;
-  }, [tvMouse]);
-
   const safeUrl = useMemo(() => {
     const rawUrl =
       reader === 1
@@ -41,7 +30,6 @@ export default function VideoPlayer({ channel, onClose }) {
 
     try {
       const url = new URL(rawUrl);
-
       const blocked = BLOCKED_DOMAINS.some((domain) =>
         url.hostname.includes(domain)
       );
@@ -69,14 +57,6 @@ export default function VideoPlayer({ channel, onClose }) {
     setIsLoading(true);
     setFrameError(false);
     setShowControls(true);
-
-    const center = {
-      x: window.innerWidth / 2,
-      y: window.innerHeight / 2,
-    };
-
-    tvMouseRef.current = center;
-    setTvMouse(center);
   }, [channel]);
 
   useEffect(() => {
@@ -110,17 +90,6 @@ export default function VideoPlayer({ channel, onClose }) {
   useEffect(() => {
     if (!channel) return;
 
-    const pressed = {
-      up: false,
-      down: false,
-      left: false,
-      right: false,
-    };
-
-    const speed = 1000;
-    let animationFrame;
-    let lastTime = performance.now();
-
     const handleKeyDown = (e) => {
       const key = e.key;
 
@@ -139,98 +108,25 @@ export default function VideoPlayer({ channel, onClose }) {
         e.keyCode === 23 ||
         e.keyCode === 66;
 
-      const isArrow =
-        key === "ArrowUp" ||
-        key === "ArrowDown" ||
-        key === "ArrowLeft" ||
-        key === "ArrowRight";
-
-      if (!isBack && !isOk && !isArrow) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      setShowControls(true);
-
       if (isBack) {
+        e.preventDefault();
+        e.stopPropagation();
         onClose();
         return;
       }
 
       if (isOk) {
-        const { x, y } = tvMouseRef.current;
-        const element = document.elementFromPoint(x, y);
-
-        if (!element) return;
-
-        const clickable = element.closest("button, a, [role='button']");
-
-        if (clickable) {
-          clickable.click();
-          return;
-        }
-
-        if (element.tagName === "IFRAME") {
-          element.focus();
-        }
-
+        setShowControls(true);
         return;
       }
 
-      if (key === "ArrowUp") pressed.up = true;
-      if (key === "ArrowDown") pressed.down = true;
-      if (key === "ArrowLeft") pressed.left = true;
-      if (key === "ArrowRight") pressed.right = true;
-    };
-
-    const handleKeyUp = (e) => {
-      const key = e.key;
-
-      if (key === "ArrowUp") pressed.up = false;
-      if (key === "ArrowDown") pressed.down = false;
-      if (key === "ArrowLeft") pressed.left = false;
-      if (key === "ArrowRight") pressed.right = false;
-    };
-
-    const animate = (time) => {
-      const delta = Math.min((time - lastTime) / 1000, 0.05);
-      lastTime = time;
-
-      const current = tvMouseRef.current;
-
-      let nextX = current.x;
-      let nextY = current.y;
-
-      const movement = speed * delta;
-
-      if (pressed.up) nextY -= movement;
-      if (pressed.down) nextY += movement;
-      if (pressed.left) nextX -= movement;
-      if (pressed.right) nextX += movement;
-
-      nextX = Math.max(10, Math.min(window.innerWidth - 10, nextX));
-      nextY = Math.max(10, Math.min(window.innerHeight - 10, nextY));
-
-      const next = {
-        x: nextX,
-        y: nextY,
-      };
-
-      tvMouseRef.current = next;
-      setTvMouse(next);
-
-      animationFrame = requestAnimationFrame(animate);
+      setShowControls(true);
     };
 
     window.addEventListener("keydown", handleKeyDown, true);
-    window.addEventListener("keyup", handleKeyUp, true);
-
-    animationFrame = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown, true);
-      window.removeEventListener("keyup", handleKeyUp, true);
-      cancelAnimationFrame(animationFrame);
     };
   }, [channel, onClose]);
 
@@ -290,9 +186,7 @@ export default function VideoPlayer({ channel, onClose }) {
                   allowFullScreen
                   referrerPolicy="no-referrer"
                   allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                  onLoad={() => {
-                    setIsLoading(false);
-                  }}
+                  onLoad={() => setIsLoading(false)}
                   onError={() => {
                     setFrameError(true);
                     setIsLoading(false);
@@ -301,7 +195,7 @@ export default function VideoPlayer({ channel, onClose }) {
               )}
 
               {isLoading && !frameError && safeUrl && (
-                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80">
+                <div className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center bg-black/80">
                   <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 </div>
               )}
@@ -335,24 +229,6 @@ export default function VideoPlayer({ channel, onClose }) {
               )}
             </div>
           </div>
-
-          <div
-            style={{
-              position: "fixed",
-              left: tvMouse.x,
-              top: tvMouse.y,
-              width: "22px",
-              height: "22px",
-              borderRadius: "999px",
-              background: "white",
-              border: "2px solid black",
-              boxShadow: "0 0 25px rgba(255,255,255,0.95)",
-              transform: "translate(-50%, -50%)",
-              zIndex: 999999,
-              pointerEvents: "none",
-              transition: "none",
-            }}
-          />
         </div>
       </div>
     </div>

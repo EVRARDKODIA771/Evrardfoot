@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const BLOCKED_DOMAINS = [
   "doubleclick.net",
@@ -20,6 +20,23 @@ export default function VideoPlayer({ channel, onClose }) {
   const [frameError, setFrameError] = useState(false);
   const [showControls, setShowControls] = useState(true);
 
+  const [tvCursor, setTvCursor] = useState({
+    x: typeof window !== "undefined" ? window.innerWidth / 2 : 500,
+    y: typeof window !== "undefined" ? window.innerHeight / 2 : 300,
+  });
+
+  const cursorRef = useRef(tvCursor);
+  const pressedRef = useRef({
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+  });
+
+  useEffect(() => {
+    cursorRef.current = tvCursor;
+  }, [tvCursor]);
+
   const safeUrl = useMemo(() => {
     const rawUrl =
       reader === 1
@@ -30,6 +47,7 @@ export default function VideoPlayer({ channel, onClose }) {
 
     try {
       const url = new URL(rawUrl);
+
       const blocked = BLOCKED_DOMAINS.some((domain) =>
         url.hostname.includes(domain)
       );
@@ -57,6 +75,14 @@ export default function VideoPlayer({ channel, onClose }) {
     setIsLoading(true);
     setFrameError(false);
     setShowControls(true);
+
+    const center = {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    };
+
+    cursorRef.current = center;
+    setTvCursor(center);
   }, [channel]);
 
   useEffect(() => {
@@ -90,6 +116,18 @@ export default function VideoPlayer({ channel, onClose }) {
   useEffect(() => {
     if (!channel) return;
 
+    let animationFrame;
+    let lastTime = performance.now();
+
+    const speed = 1200;
+
+    const stopDirections = () => {
+      pressedRef.current.up = false;
+      pressedRef.current.down = false;
+      pressedRef.current.left = false;
+      pressedRef.current.right = false;
+    };
+
     const handleKeyDown = (e) => {
       const key = e.key;
 
@@ -108,25 +146,106 @@ export default function VideoPlayer({ channel, onClose }) {
         e.keyCode === 23 ||
         e.keyCode === 66;
 
+      const isArrow =
+        key === "ArrowUp" ||
+        key === "ArrowDown" ||
+        key === "ArrowLeft" ||
+        key === "ArrowRight";
+
+      if (!isBack && !isOk && !isArrow) return;
+
+      setShowControls(true);
+
       if (isBack) {
         e.preventDefault();
         e.stopPropagation();
+        stopDirections();
         onClose();
         return;
       }
 
       if (isOk) {
-        setShowControls(true);
+        e.preventDefault();
+        e.stopPropagation();
+
+        const { x, y } = cursorRef.current;
+        const element = document.elementFromPoint(x, y);
+
+        if (!element) return;
+
+        const clickable = element.closest("button, a, [role='button']");
+
+        if (clickable) {
+          clickable.click();
+          return;
+        }
+
+        if (element.tagName === "IFRAME") {
+          element.focus();
+        }
+
         return;
       }
 
-      setShowControls(true);
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (key === "ArrowUp") pressedRef.current.up = true;
+      if (key === "ArrowDown") pressedRef.current.down = true;
+      if (key === "ArrowLeft") pressedRef.current.left = true;
+      if (key === "ArrowRight") pressedRef.current.right = true;
+    };
+
+    const handleKeyUp = (e) => {
+      const key = e.key;
+
+      if (key === "ArrowUp") pressedRef.current.up = false;
+      if (key === "ArrowDown") pressedRef.current.down = false;
+      if (key === "ArrowLeft") pressedRef.current.left = false;
+      if (key === "ArrowRight") pressedRef.current.right = false;
+    };
+
+    const animate = (time) => {
+      const delta = Math.min((time - lastTime) / 1000, 0.05);
+      lastTime = time;
+
+      const pressed = pressedRef.current;
+      const current = cursorRef.current;
+
+      let nextX = current.x;
+      let nextY = current.y;
+
+      const movement = speed * delta;
+
+      if (pressed.up) nextY -= movement;
+      if (pressed.down) nextY += movement;
+      if (pressed.left) nextX -= movement;
+      if (pressed.right) nextX += movement;
+
+      nextX = Math.max(12, Math.min(window.innerWidth - 12, nextX));
+      nextY = Math.max(12, Math.min(window.innerHeight - 12, nextY));
+
+      const next = {
+        x: nextX,
+        y: nextY,
+      };
+
+      cursorRef.current = next;
+      setTvCursor(next);
+
+      animationFrame = requestAnimationFrame(animate);
     };
 
     window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("keyup", handleKeyUp, true);
+
+    animationFrame = requestAnimationFrame(animate);
 
     return () => {
+      stopDirections();
       window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("keyup", handleKeyUp, true);
+      cancelAnimationFrame(animationFrame);
     };
   }, [channel, onClose]);
 
@@ -195,7 +314,7 @@ export default function VideoPlayer({ channel, onClose }) {
               )}
 
               {isLoading && !frameError && safeUrl && (
-                <div className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center bg-black/80">
+                <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/80">
                   <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 </div>
               )}
@@ -229,6 +348,24 @@ export default function VideoPlayer({ channel, onClose }) {
               )}
             </div>
           </div>
+
+          <div
+            style={{
+              position: "fixed",
+              left: tvCursor.x,
+              top: tvCursor.y,
+              width: "24px",
+              height: "24px",
+              borderRadius: "999px",
+              background: "white",
+              border: "2px solid black",
+              boxShadow: "0 0 24px rgba(255,255,255,0.95)",
+              transform: "translate(-50%, -50%)",
+              zIndex: 999999,
+              pointerEvents: "none",
+              transition: "none",
+            }}
+          />
         </div>
       </div>
     </div>

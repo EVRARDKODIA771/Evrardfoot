@@ -80,23 +80,27 @@ export default function VideoPlayer({ channel, onClose }) {
 <html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
   <style>
-    html, body {
+    html,
+    body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #000;
+      background: black;
     }
 
     iframe {
       width: 100%;
       height: 100%;
       border: 0;
-      background: #000;
+      background: black;
       display: block;
     }
   </style>
@@ -115,19 +119,28 @@ export default function VideoPlayer({ channel, onClose }) {
       return null;
     };
 
-    document.addEventListener("click", function (e) {
-      var target = e.target;
-      var link = target && target.closest ? target.closest("a") : null;
+    document.addEventListener(
+      "click",
+      function (e) {
+        var target = e.target;
 
-      if (link && link.target === "_blank") {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-      }
-    }, true);
+        var link =
+          target && target.closest
+            ? target.closest("a")
+            : null;
+
+        if (link && link.target === "_blank") {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      },
+      true
+    );
   </script>
 </body>
-</html>`;
+</html>
+`;
   }, [safeUrl]);
 
   useEffect(() => {
@@ -180,23 +193,30 @@ export default function VideoPlayer({ channel, onClose }) {
     if (!channel) return;
 
     const keepFocus = () => {
-      playerRootRef.current?.focus({ preventScroll: true });
+      playerRootRef.current?.focus({
+        preventScroll: true,
+      });
     };
 
     keepFocus();
 
-    const interval = setInterval(keepFocus, 250);
+    const interval = setInterval(keepFocus, 500);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [channel]);
 
   const switchReader = () => {
     setReader((prev) => (prev === 1 ? 2 : 1));
+
     setIsLoading(true);
     setFrameError(false);
     setShowControls(true);
 
-    playerRootRef.current?.focus({ preventScroll: true });
+    playerRootRef.current?.focus({
+      preventScroll: true,
+    });
   };
 
   useEffect(() => {
@@ -225,47 +245,23 @@ export default function VideoPlayer({ channel, onClose }) {
         e.keyCode === 4 ||
         e.keyCode === 461;
 
-      const isOk =
-        key === "Enter" ||
-        key === "NumpadEnter" ||
-        e.keyCode === 13 ||
-        e.keyCode === 23 ||
-        e.keyCode === 66;
-
       const isArrow =
         key === "ArrowUp" ||
         key === "ArrowDown" ||
         key === "ArrowLeft" ||
         key === "ArrowRight";
 
-      if (!isBack && !isOk && !isArrow) return;
+      if (!isBack && !isArrow) return;
 
       setShowControls(true);
 
       if (isBack) {
         e.preventDefault();
         e.stopPropagation();
+
         stopDirections();
         onClose();
-        return;
-      }
 
-      if (isOk) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const { x, y } = cursorRef.current;
-        const element = document.elementFromPoint(x, y);
-
-        if (!element) return;
-
-        const clickable = element.closest("button, a, [role='button']");
-
-        if (clickable) {
-          clickable.click();
-        }
-
-        playerRootRef.current?.focus({ preventScroll: true });
         return;
       }
 
@@ -289,6 +285,7 @@ export default function VideoPlayer({ channel, onClose }) {
 
     const animate = (time) => {
       const delta = Math.min((time - lastTime) / 1000, 0.05);
+
       lastTime = time;
 
       const pressed = pressedRef.current;
@@ -307,7 +304,10 @@ export default function VideoPlayer({ channel, onClose }) {
       nextX = Math.max(12, Math.min(window.innerWidth - 12, nextX));
       nextY = Math.max(12, Math.min(window.innerHeight - 12, nextY));
 
-      const next = { x: nextX, y: nextY };
+      const next = {
+        x: nextX,
+        y: nextY,
+      };
 
       cursorRef.current = next;
       setTvCursor(next);
@@ -322,8 +322,19 @@ export default function VideoPlayer({ channel, onClose }) {
 
     return () => {
       stopDirections();
-      window.removeEventListener("keydown", handleKeyDown, true);
-      window.removeEventListener("keyup", handleKeyUp, true);
+
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown,
+        true
+      );
+
+      window.removeEventListener(
+        "keyup",
+        handleKeyUp,
+        true
+      );
+
       cancelAnimationFrame(animationFrame);
     };
   }, [channel, onClose]);
@@ -339,12 +350,16 @@ export default function VideoPlayer({ channel, onClose }) {
       <div className="flex h-screen w-screen flex-col bg-black text-white">
         <div
           className={`border-b border-white/10 bg-black/90 transition duration-300 ${
-            showControls ? "opacity-100" : "pointer-events-none opacity-0"
+            showControls
+              ? "opacity-100"
+              : "pointer-events-none opacity-0"
           }`}
         >
           <div className="flex justify-between gap-3 px-4 py-4">
             <div>
-              <h2 className="text-lg font-semibold">{channel.name}</h2>
+              <h2 className="text-lg font-semibold">
+                {channel.name}
+              </h2>
 
               <p className="text-sm text-zinc-400">
                 {channel.category} — Lecteur {reader}
@@ -357,7 +372,9 @@ export default function VideoPlayer({ channel, onClose }) {
                   onClick={switchReader}
                   className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
                 >
-                  {reader === 1 ? "Lecteur 2" : "Lecteur 1"}
+                  {reader === 1
+                    ? "Lecteur 2"
+                    : "Lecteur 1"}
                 </button>
               )}
 
@@ -376,7 +393,10 @@ export default function VideoPlayer({ channel, onClose }) {
           onMouseMove={() => setShowControls(true)}
           onClick={() => {
             setShowControls(true);
-            playerRootRef.current?.focus({ preventScroll: true });
+
+            playerRootRef.current?.focus({
+              preventScroll: true,
+            });
           }}
         >
           <div className="absolute inset-0 p-2 md:p-4">
@@ -389,7 +409,7 @@ export default function VideoPlayer({ channel, onClose }) {
                   title={channel.name}
                   className="h-full w-full border-0 bg-black"
                   style={{
-                    pointerEvents: "none",
+                    pointerEvents: "auto",
                   }}
                   loading="eager"
                   allowFullScreen
@@ -398,7 +418,10 @@ export default function VideoPlayer({ channel, onClose }) {
                   allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                   onLoad={() => {
                     setIsLoading(false);
-                    playerRootRef.current?.focus({ preventScroll: true });
+
+                    playerRootRef.current?.focus({
+                      preventScroll: true,
+                    });
                   }}
                   onError={() => {
                     setFrameError(true);
@@ -415,7 +438,9 @@ export default function VideoPlayer({ channel, onClose }) {
 
               {(frameError || !safeUrl) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6 text-center">
-                  <p className="text-lg font-semibold">Lecture indisponible</p>
+                  <p className="text-lg font-semibold">
+                    Lecture indisponible
+                  </p>
 
                   <p className="mt-2 max-w-md text-sm text-zinc-400">
                     Ce lecteur est inaccessible ou bloqué.

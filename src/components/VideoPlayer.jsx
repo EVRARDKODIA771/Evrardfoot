@@ -343,11 +343,22 @@ export default function VideoPlayer({ channel, onClose }) {
                   src={safeUrl}
                   title={channel.name}
                   className="h-full w-full border-0 bg-black"
+                  style={{
+                    pointerEvents: "none",
+                  }}
                   loading="eager"
                   allowFullScreen
                   referrerPolicy="no-referrer"
                   allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                  onLoad={() => setIsLoading(false)}
+                  onLoad={() => {
+                    setIsLoading(false);
+
+                    if (playerRootRef.current) {
+                      playerRootRef.current.focus({
+                        preventScroll: true,
+                      });
+                    }
+                  }}
                   onError={() => {
                     setFrameError(true);
                     setIsLoading(false);

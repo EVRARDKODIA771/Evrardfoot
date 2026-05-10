@@ -117,10 +117,7 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [tvCursor, setTvCursor] = useState({
-    x: typeof window !== "undefined" ? window.innerWidth / 2 : 500,
-    y: typeof window !== "undefined" ? window.innerHeight / 2 : 300,
-  });
+  const [focusedIndex, setFocusedIndex] = useState(0);
 
   useEffect(() => {
     const savedFavorites = JSON.parse(localStorage.getItem("favorites") || "[]");
@@ -142,68 +139,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("watch_history", JSON.stringify(history));
   }, [history]);
-
-  useEffect(() => {
-    if (!platform.isTV) return;
-
-    const moveAmount = 38;
-
-    const handleKeyDown = (e) => {
-      const tvKeys = [
-        "ArrowUp",
-        "ArrowDown",
-        "ArrowLeft",
-        "ArrowRight",
-        "Enter",
-      ];
-
-      if (!tvKeys.includes(e.key)) return;
-
-      e.preventDefault();
-
-      setTvCursor((prev) => {
-        let nextX = prev.x;
-        let nextY = prev.y;
-
-        if (e.key === "ArrowUp") nextY -= moveAmount;
-        if (e.key === "ArrowDown") nextY += moveAmount;
-        if (e.key === "ArrowLeft") nextX -= moveAmount;
-        if (e.key === "ArrowRight") nextX += moveAmount;
-
-        if (e.key === "Enter") {
-          const element = document.elementFromPoint(prev.x, prev.y);
-
-          if (element) {
-            const clickable = element.closest(
-              "button, a, input, [role='button']"
-            );
-
-            if (clickable) {
-              clickable.click();
-            } else {
-              element.click();
-            }
-          }
-
-          return prev;
-        }
-
-        nextX = Math.max(8, Math.min(window.innerWidth - 8, nextX));
-        nextY = Math.max(8, Math.min(window.innerHeight - 8, nextY));
-
-        return {
-          x: nextX,
-          y: nextY,
-        };
-      });
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [platform.isTV]);
 
   const hasSearch = search.trim().length > 0;
 
@@ -231,6 +166,172 @@ export default function App() {
     if (activeTab === "favorites") return favoriteChannels;
     return filteredChannels;
   }, [activeTab, favoriteChannels, filteredChannels]);
+
+  const tvItems = useMemo(() => {
+    const items = [];
+
+    items.push({
+      id: "home",
+      type: "tab",
+      label: "Accueil",
+      action: () => {
+        setActiveTab("home");
+        setSearch("");
+      },
+    });
+
+    items.push({
+      id: "search",
+      type: "tab",
+      label: "Recherche",
+      action: () => {
+        setActiveTab("search");
+      },
+    });
+
+    items.push({
+      id: "favorites",
+      type: "tab",
+      label: "Favoris",
+      action: () => {
+        setActiveTab("favorites");
+        setSearch("");
+      },
+    });
+
+    displayedChannels.forEach((channel) => {
+      items.push({
+        id: `channel-${channel.id}`,
+        type: "channel",
+        channel,
+        action: () => openChannel(channel),
+      });
+    });
+
+    return items;
+  }, [displayedChannels, activeTab, search, favorites, history]);
+
+  useEffect(() => {
+    if (!platform.isTV) return;
+
+    setFocusedIndex(0);
+  }, [activeTab, search, platform.isTV]);
+
+  useEffect(() => {
+    if (!platform.isTV) return;
+
+    const handleKeyDown = (e) => {
+      const key = e.key;
+
+      const isBack =
+        key === "Backspace" ||
+        key === "Escape" ||
+        key === "BrowserBack" ||
+        key === "GoBack" ||
+        e.keyCode === 4 ||
+        e.keyCode === 461;
+
+      const isOk =
+        key === "Enter" ||
+        key === "NumpadEnter" ||
+        e.keyCode === 13 ||
+        e.keyCode === 23 ||
+        e.keyCode === 66;
+
+      if (
+        ![
+          "ArrowUp",
+          "ArrowDown",
+          "ArrowLeft",
+          "ArrowRight",
+          "Enter",
+          "NumpadEnter",
+          "Backspace",
+          "Escape",
+          "BrowserBack",
+          "GoBack",
+        ].includes(key) &&
+        ![4, 13, 23, 66, 461].includes(e.keyCode)
+      ) {
+        return;
+      }
+
+      e.preventDefault();
+
+      if (isBack) {
+        if (selectedChannel) {
+          closeChannel();
+          return;
+        }
+
+        if (window.history.length > 1) {
+          window.history.back();
+        }
+
+        return;
+      }
+
+      if (isOk) {
+        const item = tvItems[focusedIndex];
+
+        if (item && typeof item.action === "function") {
+          item.action();
+        }
+
+        return;
+      }
+
+      setFocusedIndex((prev) => {
+        let next = prev;
+
+        const columns = window.innerWidth >= 1280 ? 4 : window.innerWidth >= 640 ? 2 : 1;
+
+        if (key === "ArrowRight") {
+          next = Math.min(prev + 1, tvItems.length - 1);
+        }
+
+        if (key === "ArrowLeft") {
+          next = Math.max(prev - 1, 0);
+        }
+
+        if (key === "ArrowDown") {
+          if (prev < 3) {
+            next = 3;
+          } else {
+            next = Math.min(prev + columns, tvItems.length - 1);
+          }
+        }
+
+        if (key === "ArrowUp") {
+          if (prev >= 3 && prev - columns < 3) {
+            next = 0;
+          } else {
+            next = Math.max(prev - columns, 0);
+          }
+        }
+
+        setTimeout(() => {
+          const element = document.querySelector(`[data-tv-index="${next}"]`);
+
+          if (element) {
+            element.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+              inline: "center",
+            });
+          }
+        }, 0);
+
+        return next;
+      });
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, [platform.isTV, tvItems, focusedIndex, selectedChannel]);
 
   useEffect(() => {
     const syncFromUrl = () => {
@@ -298,6 +399,9 @@ export default function App() {
       ? `Résultats pour "${search}"`
       : "Mosaïque paysage, style épuré, ambiance cinéma";
 
+  const tvSelectedClass =
+    "ring-4 ring-white scale-[1.04] bg-white/10 shadow-[0_0_35px_rgba(255,255,255,0.35)]";
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#050505] pb-20 text-white">
       <header className="sticky top-0 z-30 border-b border-white/10 bg-black/70 backdrop-blur-2xl">
@@ -324,6 +428,54 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {platform.isTV && (
+        <nav className="sticky top-[73px] z-30 border-b border-white/10 bg-black/80 px-4 py-3 backdrop-blur-2xl">
+          <div className="mx-auto grid max-w-3xl grid-cols-3 gap-3 rounded-2xl bg-white/[0.04] p-2">
+            <button
+              data-tv-index="0"
+              onClick={() => {
+                setActiveTab("home");
+                setSearch("");
+              }}
+              className={`rounded-xl px-3 py-3 text-sm font-bold transition ${
+                activeTab === "home"
+                  ? "bg-white text-black"
+                  : "text-zinc-300"
+              } ${focusedIndex === 0 ? tvSelectedClass : ""}`}
+            >
+              Accueil
+            </button>
+
+            <button
+              data-tv-index="1"
+              onClick={() => setActiveTab("search")}
+              className={`rounded-xl px-3 py-3 text-sm font-bold transition ${
+                activeTab === "search"
+                  ? "bg-white text-black"
+                  : "text-zinc-300"
+              } ${focusedIndex === 1 ? tvSelectedClass : ""}`}
+            >
+              Recherche
+            </button>
+
+            <button
+              data-tv-index="2"
+              onClick={() => {
+                setActiveTab("favorites");
+                setSearch("");
+              }}
+              className={`rounded-xl px-3 py-3 text-sm font-bold transition ${
+                activeTab === "favorites"
+                  ? "bg-white text-black"
+                  : "text-zinc-300"
+              } ${focusedIndex === 2 ? tvSelectedClass : ""}`}
+            >
+              Favoris
+            </button>
+          </div>
+        </nav>
+      )}
 
       <main>
         {activeTab === "home" && !hasSearch && (
@@ -382,7 +534,7 @@ export default function App() {
                       channel.cover || channel.logo || channel.image || "/bg.jpeg"
                     }
                     alt={channel.name}
-                    className="h-28 w-full object-contain bg-black p-4"
+                    className="h-28 w-full bg-black object-contain p-4"
                   />
                   <div className="p-3">
                     <p className="truncate text-sm font-semibold">
@@ -434,86 +586,76 @@ export default function App() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-              {displayedChannels.map((channel, index) => (
-                <div
-                  key={channel.id}
-                  className="animate-card-in"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <ChannelCard
-                    channel={channel}
-                    onSelect={openChannel}
-                    isFavorite={favorites.includes(channel.id)}
-                    onToggleFavorite={toggleFavorite}
-                  />
-                </div>
-              ))}
+              {displayedChannels.map((channel, index) => {
+                const tvIndex = index + 3;
+                const selected = platform.isTV && focusedIndex === tvIndex;
+
+                return (
+                  <div
+                    key={channel.id}
+                    data-tv-index={tvIndex}
+                    className={`animate-card-in rounded-[26px] transition ${
+                      selected ? tvSelectedClass : ""
+                    }`}
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <ChannelCard
+                      channel={channel}
+                      onSelect={openChannel}
+                      isFavorite={favorites.includes(channel.id)}
+                      onToggleFavorite={toggleFavorite}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/85 px-4 py-3 backdrop-blur-2xl md:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-3 rounded-2xl bg-white/[0.04] p-1">
-          <button
-            onClick={() => {
-              setActiveTab("home");
-              setSearch("");
-            }}
-            className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
-              activeTab === "home"
-                ? "bg-white text-black"
-                : "text-zinc-400 hover:text-white"
-            }`}
-          >
-            Accueil
-          </button>
+      {!platform.isTV && (
+        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/85 px-4 py-3 backdrop-blur-2xl md:hidden">
+          <div className="mx-auto grid max-w-md grid-cols-3 rounded-2xl bg-white/[0.04] p-1">
+            <button
+              onClick={() => {
+                setActiveTab("home");
+                setSearch("");
+              }}
+              className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                activeTab === "home"
+                  ? "bg-white text-black"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Accueil
+            </button>
 
-          <button
-            onClick={() => setActiveTab("search")}
-            className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
-              activeTab === "search"
-                ? "bg-white text-black"
-                : "text-zinc-400 hover:text-white"
-            }`}
-          >
-            Recherche
-          </button>
+            <button
+              onClick={() => setActiveTab("search")}
+              className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                activeTab === "search"
+                  ? "bg-white text-black"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Recherche
+            </button>
 
-          <button
-            onClick={() => {
-              setActiveTab("favorites");
-              setSearch("");
-            }}
-            className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
-              activeTab === "favorites"
-                ? "bg-white text-black"
-                : "text-zinc-400 hover:text-white"
-            }`}
-          >
-            Favoris
-          </button>
-        </div>
-      </nav>
-
-      {platform.isTV && (
-        <div
-          style={{
-            position: "fixed",
-            left: tvCursor.x,
-            top: tvCursor.y,
-            width: "20px",
-            height: "20px",
-            borderRadius: "999px",
-            background: "white",
-            border: "2px solid rgba(0,0,0,0.7)",
-            boxShadow: "0 0 22px rgba(255,255,255,0.95)",
-            transform: "translate(-50%, -50%)",
-            zIndex: 999999,
-            pointerEvents: "none",
-            transition: "left 0.04s linear, top 0.04s linear",
-          }}
-        />
+            <button
+              onClick={() => {
+                setActiveTab("favorites");
+                setSearch("");
+              }}
+              className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                activeTab === "favorites"
+                  ? "bg-white text-black"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Favoris
+            </button>
+          </div>
+        </nav>
       )}
 
       {selectedChannel && (

@@ -25,7 +25,9 @@ export default function VideoPlayer({ channel, onClose }) {
     y: typeof window !== "undefined" ? window.innerHeight / 2 : 300,
   });
 
+  const playerRootRef = useRef(null);
   const cursorRef = useRef(tvCursor);
+
   const pressedRef = useRef({
     up: false,
     down: false,
@@ -106,11 +108,37 @@ export default function VideoPlayer({ channel, onClose }) {
     return () => clearTimeout(timer);
   }, [showControls]);
 
+  useEffect(() => {
+    if (!channel) return;
+
+    const keepFocus = () => {
+      if (playerRootRef.current) {
+        playerRootRef.current.focus({
+          preventScroll: true,
+        });
+      }
+    };
+
+    keepFocus();
+
+    const interval = setInterval(keepFocus, 250);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [channel]);
+
   const switchReader = () => {
     setReader((prev) => (prev === 1 ? 2 : 1));
     setIsLoading(true);
     setFrameError(false);
     setShowControls(true);
+
+    if (playerRootRef.current) {
+      playerRootRef.current.focus({
+        preventScroll: true,
+      });
+    }
   };
 
   useEffect(() => {
@@ -177,11 +205,12 @@ export default function VideoPlayer({ channel, onClose }) {
 
         if (clickable) {
           clickable.click();
-          return;
         }
 
-        if (element.tagName === "IFRAME") {
-          element.focus();
+        if (playerRootRef.current) {
+          playerRootRef.current.focus({
+            preventScroll: true,
+          });
         }
 
         return;
@@ -252,7 +281,11 @@ export default function VideoPlayer({ channel, onClose }) {
   if (!channel) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
+    <div
+      ref={playerRootRef}
+      tabIndex={0}
+      className="fixed inset-0 z-50 bg-black outline-none"
+    >
       <div className="flex h-screen w-screen flex-col bg-black text-white">
         <div
           className={`border-b border-white/10 bg-black/90 transition duration-300 ${
@@ -291,13 +324,22 @@ export default function VideoPlayer({ channel, onClose }) {
         <div
           className="relative flex-1 bg-black"
           onMouseMove={() => setShowControls(true)}
-          onClick={() => setShowControls(true)}
+          onClick={() => {
+            setShowControls(true);
+
+            if (playerRootRef.current) {
+              playerRootRef.current.focus({
+                preventScroll: true,
+              });
+            }
+          }}
         >
           <div className="absolute inset-0 p-2 md:p-4">
             <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-black">
               {!frameError && safeUrl && (
                 <iframe
                   key={safeUrl}
+                  tabIndex={-1}
                   src={safeUrl}
                   title={channel.name}
                   className="h-full w-full border-0 bg-black"

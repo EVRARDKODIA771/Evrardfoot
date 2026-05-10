@@ -14,6 +14,14 @@ const BLOCKED_DOMAINS = [
   "outbrain.com",
 ];
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
 export default function VideoPlayer({ channel, onClose }) {
   const [reader, setReader] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,6 +69,66 @@ export default function VideoPlayer({ channel, onClose }) {
       return "";
     }
   }, [channel, reader]);
+
+  const sandboxHtml = useMemo(() => {
+    if (!safeUrl) return "";
+
+    const escapedUrl = escapeHtml(safeUrl);
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #000;
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <iframe
+    src="${escapedUrl}"
+    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+    allowfullscreen
+    referrerpolicy="no-referrer"
+  ></iframe>
+
+  <script>
+    window.open = function () {
+      return null;
+    };
+
+    document.addEventListener("click", function (e) {
+      var target = e.target;
+      var link = target && target.closest ? target.closest("a") : null;
+
+      if (link && link.target === "_blank") {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    }, true);
+  </script>
+</body>
+</html>`;
+  }, [safeUrl]);
 
   useEffect(() => {
     if (!channel) return;
@@ -112,20 +180,14 @@ export default function VideoPlayer({ channel, onClose }) {
     if (!channel) return;
 
     const keepFocus = () => {
-      if (playerRootRef.current) {
-        playerRootRef.current.focus({
-          preventScroll: true,
-        });
-      }
+      playerRootRef.current?.focus({ preventScroll: true });
     };
 
     keepFocus();
 
     const interval = setInterval(keepFocus, 250);
 
-    return () => {
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [channel]);
 
   const switchReader = () => {
@@ -134,11 +196,7 @@ export default function VideoPlayer({ channel, onClose }) {
     setFrameError(false);
     setShowControls(true);
 
-    if (playerRootRef.current) {
-      playerRootRef.current.focus({
-        preventScroll: true,
-      });
-    }
+    playerRootRef.current?.focus({ preventScroll: true });
   };
 
   useEffect(() => {
@@ -207,12 +265,7 @@ export default function VideoPlayer({ channel, onClose }) {
           clickable.click();
         }
 
-        if (playerRootRef.current) {
-          playerRootRef.current.focus({
-            preventScroll: true,
-          });
-        }
-
+        playerRootRef.current?.focus({ preventScroll: true });
         return;
       }
 
@@ -254,10 +307,7 @@ export default function VideoPlayer({ channel, onClose }) {
       nextX = Math.max(12, Math.min(window.innerWidth - 12, nextX));
       nextY = Math.max(12, Math.min(window.innerHeight - 12, nextY));
 
-      const next = {
-        x: nextX,
-        y: nextY,
-      };
+      const next = { x: nextX, y: nextY };
 
       cursorRef.current = next;
       setTvCursor(next);
@@ -289,7 +339,7 @@ export default function VideoPlayer({ channel, onClose }) {
       <div className="flex h-screen w-screen flex-col bg-black text-white">
         <div
           className={`border-b border-white/10 bg-black/90 transition duration-300 ${
-            showControls ? "opacity-100" : "opacity-0 pointer-events-none"
+            showControls ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
           <div className="flex justify-between gap-3 px-4 py-4">
@@ -326,21 +376,16 @@ export default function VideoPlayer({ channel, onClose }) {
           onMouseMove={() => setShowControls(true)}
           onClick={() => {
             setShowControls(true);
-
-            if (playerRootRef.current) {
-              playerRootRef.current.focus({
-                preventScroll: true,
-              });
-            }
+            playerRootRef.current?.focus({ preventScroll: true });
           }}
         >
           <div className="absolute inset-0 p-2 md:p-4">
             <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-black">
               {!frameError && safeUrl && (
                 <iframe
-                  key={safeUrl}
+                  key={`${reader}-${safeUrl}`}
                   tabIndex={-1}
-                  src={safeUrl}
+                  srcDoc={sandboxHtml}
                   title={channel.name}
                   className="h-full w-full border-0 bg-black"
                   style={{
@@ -349,15 +394,11 @@ export default function VideoPlayer({ channel, onClose }) {
                   loading="eager"
                   allowFullScreen
                   referrerPolicy="no-referrer"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                   allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                   onLoad={() => {
                     setIsLoading(false);
-
-                    if (playerRootRef.current) {
-                      playerRootRef.current.focus({
-                        preventScroll: true,
-                      });
-                    }
+                    playerRootRef.current?.focus({ preventScroll: true });
                   }}
                   onError={() => {
                     setFrameError(true);

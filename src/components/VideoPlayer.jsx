@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const BLOCKED_DOMAINS = [
   "doubleclick.net",
@@ -19,17 +19,23 @@ export default function VideoPlayer({ channel, onClose }) {
   const [isLoading, setIsLoading] = useState(true);
   const [frameError, setFrameError] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [shieldActive, setShieldActive] = useState(true);
-  const [unlockCount, setUnlockCount] = useState(0);
 
   const [tvMouse, setTvMouse] = useState({
     x: typeof window !== "undefined" ? window.innerWidth / 2 : 500,
     y: typeof window !== "undefined" ? window.innerHeight / 2 : 300,
   });
 
+  const tvMouseRef = useRef(tvMouse);
+
+  useEffect(() => {
+    tvMouseRef.current = tvMouse;
+  }, [tvMouse]);
+
   const safeUrl = useMemo(() => {
     const rawUrl =
-      reader === 1 ? channel?.streamUrl : channel?.streamUrl2 || channel?.streamUrl;
+      reader === 1
+        ? channel?.streamUrl
+        : channel?.streamUrl2 || channel?.streamUrl;
 
     if (!rawUrl) return "";
 
@@ -48,35 +54,12 @@ export default function VideoPlayer({ channel, onClose }) {
     }
   }, [channel, reader]);
 
-  const unlockVeryShort = () => {
-    setUnlockCount((prev) => prev + 1);
-    setShieldActive(false);
-    setShowControls(true);
-
-    setTimeout(() => {
-      setShieldActive(true);
-    }, 2000);
-  };
-
-  const switchReader = () => {
-    setReader((prev) => (prev === 1 ? 2 : 1));
-    setIsLoading(true);
-    setFrameError(false);
-    setShowControls(true);
-    setShieldActive(true);
-    setUnlockCount(0);
-  };
-
   useEffect(() => {
     if (!channel) return;
 
-    const blockContextMenu = (e) => e.preventDefault();
-
-    document.addEventListener("contextmenu", blockContextMenu);
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener("contextmenu", blockContextMenu);
       document.body.style.overflow = "";
     };
   }, [channel]);
@@ -86,20 +69,19 @@ export default function VideoPlayer({ channel, onClose }) {
     setIsLoading(true);
     setFrameError(false);
     setShowControls(true);
-    setShieldActive(true);
-    setUnlockCount(0);
 
-    setTvMouse({
+    const center = {
       x: window.innerWidth / 2,
       y: window.innerHeight / 2,
-    });
+    };
+
+    tvMouseRef.current = center;
+    setTvMouse(center);
   }, [channel]);
 
   useEffect(() => {
     setIsLoading(true);
     setFrameError(false);
-    setShieldActive(true);
-    setUnlockCount(0);
 
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -118,8 +100,26 @@ export default function VideoPlayer({ channel, onClose }) {
     return () => clearTimeout(timer);
   }, [showControls]);
 
+  const switchReader = () => {
+    setReader((prev) => (prev === 1 ? 2 : 1));
+    setIsLoading(true);
+    setFrameError(false);
+    setShowControls(true);
+  };
+
   useEffect(() => {
     if (!channel) return;
+
+    const pressed = {
+      up: false,
+      down: false,
+      left: false,
+      right: false,
+    };
+
+    const speed = 1000;
+    let animationFrame;
+    let lastTime = performance.now();
 
     const handleKeyDown = (e) => {
       const key = e.key;
@@ -158,7 +158,8 @@ export default function VideoPlayer({ channel, onClose }) {
       }
 
       if (isOk) {
-        const element = document.elementFromPoint(tvMouse.x, tvMouse.y);
+        const { x, y } = tvMouseRef.current;
+        const element = document.elementFromPoint(x, y);
 
         if (!element) return;
 
@@ -169,11 +170,6 @@ export default function VideoPlayer({ channel, onClose }) {
           return;
         }
 
-        if (shieldActive) {
-          unlockVeryShort();
-          return;
-        }
-
         if (element.tagName === "IFRAME") {
           element.focus();
         }
@@ -181,33 +177,62 @@ export default function VideoPlayer({ channel, onClose }) {
         return;
       }
 
-      const move = 45;
+      if (key === "ArrowUp") pressed.up = true;
+      if (key === "ArrowDown") pressed.down = true;
+      if (key === "ArrowLeft") pressed.left = true;
+      if (key === "ArrowRight") pressed.right = true;
+    };
 
-      setTvMouse((prev) => {
-        let nextX = prev.x;
-        let nextY = prev.y;
+    const handleKeyUp = (e) => {
+      const key = e.key;
 
-        if (key === "ArrowUp") nextY -= move;
-        if (key === "ArrowDown") nextY += move;
-        if (key === "ArrowLeft") nextX -= move;
-        if (key === "ArrowRight") nextX += move;
+      if (key === "ArrowUp") pressed.up = false;
+      if (key === "ArrowDown") pressed.down = false;
+      if (key === "ArrowLeft") pressed.left = false;
+      if (key === "ArrowRight") pressed.right = false;
+    };
 
-        nextX = Math.max(10, Math.min(window.innerWidth - 10, nextX));
-        nextY = Math.max(10, Math.min(window.innerHeight - 10, nextY));
+    const animate = (time) => {
+      const delta = Math.min((time - lastTime) / 1000, 0.05);
+      lastTime = time;
 
-        return {
-          x: nextX,
-          y: nextY,
-        };
-      });
+      const current = tvMouseRef.current;
+
+      let nextX = current.x;
+      let nextY = current.y;
+
+      const movement = speed * delta;
+
+      if (pressed.up) nextY -= movement;
+      if (pressed.down) nextY += movement;
+      if (pressed.left) nextX -= movement;
+      if (pressed.right) nextX += movement;
+
+      nextX = Math.max(10, Math.min(window.innerWidth - 10, nextX));
+      nextY = Math.max(10, Math.min(window.innerHeight - 10, nextY));
+
+      const next = {
+        x: nextX,
+        y: nextY,
+      };
+
+      tvMouseRef.current = next;
+      setTvMouse(next);
+
+      animationFrame = requestAnimationFrame(animate);
     };
 
     window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("keyup", handleKeyUp, true);
+
+    animationFrame = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("keyup", handleKeyUp, true);
+      cancelAnimationFrame(animationFrame);
     };
-  }, [channel, onClose, tvMouse, shieldActive]);
+  }, [channel, onClose]);
 
   if (!channel) return null;
 
@@ -256,36 +281,23 @@ export default function VideoPlayer({ channel, onClose }) {
           <div className="absolute inset-0 p-2 md:p-4">
             <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-black">
               {!frameError && safeUrl && (
-                <>
-                  <iframe
-                    key={safeUrl}
-                    src={safeUrl}
-                    title={channel.name}
-                    className="h-full w-full border-0 bg-black"
-                    loading="eager"
-                    allowFullScreen
-                    referrerPolicy="no-referrer"
-                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                    onLoad={() => {
-                      setIsLoading(false);
-                    }}
-                    onError={() => {
-                      setFrameError(true);
-                      setIsLoading(false);
-                    }}
-                  />
-
-                  {shieldActive && (
-                    <div
-                      className="absolute inset-0 z-20 cursor-pointer"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        unlockVeryShort();
-                      }}
-                    />
-                  )}
-                </>
+                <iframe
+                  key={safeUrl}
+                  src={safeUrl}
+                  title={channel.name}
+                  className="h-full w-full border-0 bg-black"
+                  loading="eager"
+                  allowFullScreen
+                  referrerPolicy="no-referrer"
+                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                  onLoad={() => {
+                    setIsLoading(false);
+                  }}
+                  onError={() => {
+                    setFrameError(true);
+                    setIsLoading(false);
+                  }}
+                />
               )}
 
               {isLoading && !frameError && safeUrl && (
@@ -338,7 +350,7 @@ export default function VideoPlayer({ channel, onClose }) {
               transform: "translate(-50%, -50%)",
               zIndex: 999999,
               pointerEvents: "none",
-              transition: "left 0.04s linear, top 0.04s linear",
+              transition: "none",
             }}
           />
         </div>

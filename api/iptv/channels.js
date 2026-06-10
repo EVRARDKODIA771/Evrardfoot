@@ -14,18 +14,21 @@ export default async function handler(req, res) {
 
     const { category_id } = req.query;
 
+    // ✅ Au départ, s'il n'y a pas de catégorie choisie,
+    // on ne charge aucune chaîne
+    if (!category_id) {
+      return res.status(200).json([]);
+    }
+
     const base = IPTV_DNS.trim().replace(/\/+$/, "");
     const username = IPTV_USERNAME.trim();
     const password = IPTV_PASSWORD.trim();
 
-    let url =
+    const url =
       `${base}/player_api.php?username=${encodeURIComponent(username)}` +
       `&password=${encodeURIComponent(password)}` +
-      `&action=get_live_streams`;
-
-    if (category_id) {
-      url += `&category_id=${encodeURIComponent(category_id)}`;
-    }
+      `&action=get_live_streams` +
+      `&category_id=${encodeURIComponent(category_id)}`;
 
     const response = await fetch(url);
     const data = await response.json();

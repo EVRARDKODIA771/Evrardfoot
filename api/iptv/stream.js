@@ -10,9 +10,9 @@ export default function handler(req, res) {
     }
 
     return res.status(200).json({
-      url: `/api/iptv/proxy?stream_id=${encodeURIComponent(stream_id)}`,
+      url: `/api/iptv/proxy-m3u8?stream_id=${encodeURIComponent(stream_id)}`,
       stream_id,
-      format: "proxy",
+      format: "proxy-m3u8",
     });
   } catch (err) {
     return res.status(500).json({

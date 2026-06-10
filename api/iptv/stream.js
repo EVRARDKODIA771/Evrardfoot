@@ -26,11 +26,12 @@ export default function handler(req, res) {
     const url =
       `${base}/live/${IPTV_USERNAME.trim()}` +
       `/${IPTV_PASSWORD.trim()}` +
-      `/${String(stream_id).trim()}.m3u8`;
+      `/${String(stream_id).trim()}.ts`;
 
     return res.status(200).json({
       url: url.trim(),
       stream_id,
+      format: "ts",
     });
   } catch (err) {
     return res.status(500).json({

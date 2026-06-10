@@ -4,7 +4,7 @@ const IPTV_PASSWORD = process.env.IPTV_PASSWORD;
 
 function assertConfig() {
   if (!IPTV_DNS || !IPTV_USERNAME || !IPTV_PASSWORD) {
-    throw new Error("Variables IPTV manquantes sur Vercel");
+    throw new Error("Variables IPTV manquantes");
   }
 }
 
@@ -15,31 +15,32 @@ export default async function handler(req, res) {
     const { stream_id } = req.query;
 
     if (!stream_id) {
-      return res.status(400).json({
-        error: true,
-        message: "stream_id manquant",
-      });
+      return res.status(400).send("stream_id manquant");
     }
 
     const base = IPTV_DNS.trim().replace(/\/+$/, "");
 
-    const url =
+    const iptvUrl =
       `${base}/live/${IPTV_USERNAME.trim()}` +
       `/${IPTV_PASSWORD.trim()}` +
-      `/${String(stream_id).trim()}.m3u8`;
+      `/${stream_id}.m3u8`;
 
-    const response = await fetch(url);
+    const response = await fetch(iptvUrl);
 
-    return res.status(200).json({
-      status: response.status,
-      ok: response.ok,
-      finalUrl: url,
-    });
+    if (!response.ok) {
+      return res.status(response.status).send("Flux indisponible");
+    }
+
+    const playlist = await response.text();
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.apple.mpegurl"
+    );
+
+    return res.status(200).send(playlist);
 
   } catch (err) {
-    return res.status(500).json({
-      error: true,
-      message: err.message,
-    });
+    return res.status(500).send(err.message);
   }
 }

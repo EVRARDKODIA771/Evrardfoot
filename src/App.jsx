@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ChannelCard from "./components/ChannelCard";
 import VideoPlayer from "./components/VideoPlayer";
+import Extended from "./components/extended.jsx";
 import { channels } from "./data/channels";
 
 const PC_DOWNLOAD_URL =
@@ -51,57 +52,6 @@ function getPlatformInfo() {
     isDesktop,
     isNativeApp: isElectron || isCapacitor,
   };
-}
-
-function ExtendedContent({ onRestrict }) {
-  return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050505] text-white">
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-black/70 backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight text-white">
-              EvrardFoot
-            </h1>
-            <p className="text-sm text-zinc-400">Contenu étendu</p>
-          </div>
-
-          <button
-            onClick={onRestrict}
-            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-red-500"
-          >
-            Restreindre
-          </button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 py-10 md:px-8">
-        <section className="rounded-[30px] border border-white/10 bg-white/[0.04] p-6 md:p-10">
-          <div className="max-w-3xl">
-            <div className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-zinc-300">
-              IPTV • Live • Broadcasting
-            </div>
-
-            <h2 className="mt-6 text-4xl font-black tracking-tight md:text-6xl">
-              Zone de contenu étendu
-            </h2>
-
-            <p className="mt-5 text-base leading-7 text-zinc-300 md:text-lg">
-              Ici, on va intégrer la nouvelle partie streaming/IPTV de
-              EvrardFoot. Pour l’instant, cette page sert de base propre.
-            </p>
-          </div>
-
-          <div className="mt-10 rounded-3xl border border-white/10 bg-black/40 p-6">
-            <h3 className="text-xl font-bold">Lecteur IPTV bientôt ici</h3>
-            <p className="mt-2 text-sm text-zinc-400">
-              On pourra ensuite ajouter la liste des chaînes, les catégories et
-              le lecteur vidéo.
-            </p>
-          </div>
-        </section>
-      </main>
-    </div>
-  );
 }
 
 export default function App() {
@@ -367,7 +317,7 @@ export default function App() {
     "ring-4 ring-white scale-[1.04] bg-white/10 shadow-[0_0_35px_rgba(255,255,255,0.35)]";
 
   if (isExtended) {
-    return <ExtendedContent onRestrict={() => setIsExtended(false)} />;
+    return <Extended onRestrict={() => setIsExtended(false)} />;
   }
 
   return (
@@ -532,6 +482,7 @@ export default function App() {
                     alt={channel.name}
                     className="h-28 w-full bg-black object-contain p-4"
                   />
+
                   <div className="p-3">
                     <p className="truncate text-sm font-semibold">
                       {channel.name}

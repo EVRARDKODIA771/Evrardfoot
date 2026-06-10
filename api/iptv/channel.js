@@ -1,169 +1,49 @@
-voici channel.js 
-export const channels = [
-  // 🔴 CANAL+
-  {
-    id: 1,
-    name: "Canal +",
-    category: "Sport",
-    cover: "/logo/Canal+.png",
-    streamUrl: "https://bolaloca.my/player/3/11",
-    streamUrl2: "https://cartelive.club/player/3/11",
-    status: "HD",
-  },
-  {
-    id: 2,
-    name: "Canal + Foot",
-    category: "Sport",
-    cover: "/logo/foot_resized.png",
-    streamUrl: "https://bolaloca.my/player/3/12",
-    streamUrl2: "https://cartelive.club/player/3/12",
-    status: "HD",
-  },
-  {
-    id: 3,
-    name: "Canal + Sport",
-    category: "Sport",
-    cover: "/logo/+sport.png",
-    streamUrl: "https://bolaloca.my/player/3/13",
-    streamUrl2: "https://cartelive.club/player/3/13",
-    status: "HD",
-  },
-  {
-    id: 4,
-    name: "Canal + 360",
-    category: "Sport",
-    cover: "/logo/Canal+Sport_360.png",
-    streamUrl: "https://bolaloca.my/player/3/14",
-    streamUrl2: "https://cartelive.club/player/3/14",
-    status: "HD",
-  },
+const IPTV_DNS = process.env.IPTV_DNS;
+const IPTV_USERNAME = process.env.IPTV_USERNAME;
+const IPTV_PASSWORD = process.env.IPTV_PASSWORD;
 
-  // 🔵 BEIN
-  {
-    id: 5,
-    name: "Bein Sport 1",
-    category: "Sport",
-    cover: "/logo/Bein sport.png",
-    streamUrl: "https://bolaloca.my/player/3/1",
-    streamUrl2: "https://cartelive.club/player/2/1",
-    status: "FHD",
-  },
-  {
-    id: 6,
-    name: "Bein Sport 2",
-    category: "Sport",
-    cover: "/logo/beinsport2.jpg",
-    streamUrl: "https://bolaloca.my/player/3/2",
-    streamUrl2: "https://cartelive.club/player/2/2",
-    status: "FHD",
-  },
-  {
-    id: 7,
-    name: "Bein Sport 3",
-    category: "Sport",
-    cover: "/logo/beinsport3.png",
-    streamUrl: "https://bolaloca.my/player/3/3",
-    streamUrl2: "https://cartelive.club/player/3/3",
-    status: "FHD",
-  },
-  {
-    id: 8,
-    name: "Bein Sport 4 Max",
-    category: "Sport",
-    cover: "/logo/Bein sport.png",
-    streamUrl: "https://bolaloca.my/player/3/4",
-    streamUrl2: "https://cartelive.club/player/3/4",
-    status: "FHD",
-  },
+function assertConfig() {
+  if (!IPTV_DNS || !IPTV_USERNAME || !IPTV_PASSWORD) {
+    throw new Error("Variables IPTV manquantes sur Vercel");
+  }
+}
 
-  // 🟡 AUTRES SPORTS
-  {
-    id: 11,
-    name: "Ligue 1",
-    category: "Football",
-    cover: "/logo/Logo_Ligue_1_2024.jpg",
-    streamUrl: "https://bolaloca.my/player/3/20",
-    streamUrl2: "https://cartelive.club/player/2/20",
-    status: "HD",
-  },
-  {
-    id: 12,
-    name: "Eurosport 1",
-    category: "Sport",
-    cover: "/logo/eurosport.jpg",
-    streamUrl: "https://bolaloca.my/player/3/15",
-    streamUrl2: "https://cartelive.club/player/3/15",
-    status: "HD",
-  },
-  {
-    id: 13,
-    name: "Eurosport 2",
-    category: "Sport",
-    cover: "/logo/Eurosport_2_logo.png",
-    streamUrl: "https://bolaloca.my/player/3/16",
-    streamUrl2: "https://cartelive.club/player/3/16",
-    status: "HD",
-  },
+export default async function handler(req, res) {
+  try {
+    assertConfig();
 
-  // 📺 TV
-  {
-    id: 20,
-    name: "TF1",
-    category: "TV",
-    cover: "/logo/TF1.png",
-    streamUrl: "https://bolaloca.my/player/3/24",
-    streamUrl2: "https://cartelive.club/player/3/24",
-    status: "HD",
-  },
-  {
-    id: 21,
-    name: "M6",
-    category: "TV",
-    cover: "/logo/M6.png",
-    streamUrl: "https://bolaloca.my/player/3/26",
-    streamUrl2: "https://cartelive.club/player/3/26",
-    status: "HD",
-  },
+    const { category_id } = req.query;
 
-  // 🆕 NOUVELLES CHAÎNES
-  {
-    id: 30,
-    name: "CNEWS",
-    category: "News",
-    cover: "/logo/cnews.png",
-    streamUrl: "https://www.dailymotion.com/embed/video/x3b68jn",
-    status: "HD",
-  },
-  {
-    id: 31,
-    name: "ARTE",
-    category: "TV",
-    cover: "/logo/arte.png",
-    streamUrl: "https://www.livehdtv.com/yayin/?kanal=148",
-    status: "HD",
-  },
-  {
-    id: 32,
-    name: "France 2",
-    category: "TV",
-    cover: "/logo/france2.png",
-    streamUrl: "https://cartelive.club/player/3/28",
-    status: "HD",
-  },
-  {
-    id: 33,
-    name: "France 3",
-    category: "TV",
-    cover: "/logo/france3.png",
-    streamUrl: "https://cartelive.club/player/3/29",
-    status: "HD",
-  },
-  {
-    id: 34,
-    name: "france 4",
-    category: "TV",
-    cover: "/logo/france 4.png",
-    streamUrl: "https://cartelive.club/player/3/30",
-    status: "HD",
-  },
-];
+    const base = IPTV_DNS.replace(/\/+$/, "");
+
+    let url =
+      `${base}/player_api.php?username=${encodeURIComponent(IPTV_USERNAME)}` +
+      `&password=${encodeURIComponent(IPTV_PASSWORD)}` +
+      `&action=get_live_streams`;
+
+    if (category_id) {
+      url += `&category_id=${encodeURIComponent(category_id)}`;
+    }
+
+    const r = await fetch(url);
+    const data = await r.json();
+
+    const cleaned = data.map((ch) => ({
+      stream_id: ch.stream_id,
+      name: ch.name,
+      category_id: ch.category_id,
+      stream_icon: ch.stream_icon,
+      epg_channel_id: ch.epg_channel_id,
+      added: ch.added,
+      num: ch.num,
+      stream_type: ch.stream_type,
+    }));
+
+    res.status(200).json(cleaned);
+  } catch (err) {
+    res.status(500).json({
+      error: true,
+      message: err.message,
+    });
+  }
+}

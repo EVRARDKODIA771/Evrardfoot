@@ -23,16 +23,14 @@ export default async function handler(req, res) {
 
     const base = IPTV_DNS.replace(/\/+$/, "");
 
-    const streamUrl =
+    const url =
       `${base}/live/${encodeURIComponent(IPTV_USERNAME)}` +
       `/${encodeURIComponent(IPTV_PASSWORD)}` +
       `/${encodeURIComponent(stream_id)}.m3u8`;
 
-    res.status(200).json({
-      url: streamUrl,
-    });
+    return res.status(200).json({ url });
   } catch (err) {
-    res.status(500).json({
+    return res.status(500).json({
       error: true,
       message: err.message,
     });

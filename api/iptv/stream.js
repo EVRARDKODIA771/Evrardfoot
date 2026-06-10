@@ -8,7 +8,7 @@ function assertConfig() {
   }
 }
 
-export default async function handler(req, res) {
+export default function handler(req, res) {
   try {
     assertConfig();
 
@@ -21,14 +21,17 @@ export default async function handler(req, res) {
       });
     }
 
-    const base = IPTV_DNS.replace(/\/+$/, "");
+    const base = IPTV_DNS.trim().replace(/\/+$/, "");
 
     const url =
-      `${base}/live/${encodeURIComponent(IPTV_USERNAME)}` +
-      `/${encodeURIComponent(IPTV_PASSWORD)}` +
-      `/${encodeURIComponent(stream_id)}.m3u8`;
+      `${base}/live/${IPTV_USERNAME.trim()}` +
+      `/${IPTV_PASSWORD.trim()}` +
+      `/${String(stream_id).trim()}.m3u8`;
 
-    return res.status(200).json({ url });
+    return res.status(200).json({
+      url: url.trim(),
+      stream_id,
+    });
   } catch (err) {
     return res.status(500).json({
       error: true,

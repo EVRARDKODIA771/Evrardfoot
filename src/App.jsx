@@ -56,6 +56,7 @@ function getPlatformInfo() {
 
 export default function App() {
   const platform = getPlatformInfo();
+  const isExtendedPage = window.location.pathname === "/extended";
 
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);
@@ -64,7 +65,6 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [focusedIndex, setFocusedIndex] = useState(0);
-  const [isExtended, setIsExtended] = useState(false);
 
   const openChannel = (channel) => {
     const params = new URLSearchParams();
@@ -192,7 +192,7 @@ export default function App() {
   useEffect(() => {
     if (!platform.isTV) return;
     if (selectedChannel) return;
-    if (isExtended) return;
+    if (isExtendedPage) return;
 
     const handleKeyDown = (e) => {
       const key = e.key;
@@ -274,9 +274,11 @@ export default function App() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown, true);
     };
-  }, [platform.isTV, tvItems, focusedIndex, selectedChannel, isExtended]);
+  }, [platform.isTV, tvItems, focusedIndex, selectedChannel, isExtendedPage]);
 
   useEffect(() => {
+    if (isExtendedPage) return;
+
     const syncFromUrl = () => {
       const params = new URLSearchParams(window.location.search);
       const idParam = params.get("id");
@@ -297,7 +299,7 @@ export default function App() {
     return () => {
       window.removeEventListener("popstate", syncFromUrl);
     };
-  }, []);
+  }, [isExtendedPage]);
 
   const sectionTitle =
     activeTab === "favorites"
@@ -316,8 +318,8 @@ export default function App() {
   const tvSelectedClass =
     "ring-4 ring-white scale-[1.04] bg-white/10 shadow-[0_0_35px_rgba(255,255,255,0.35)]";
 
-  if (isExtended) {
-    return <Extended onRestrict={() => setIsExtended(false)} />;
+  if (isExtendedPage) {
+    return <Extended />;
   }
 
   return (
@@ -347,12 +349,12 @@ export default function App() {
                 Android
               </a>
 
-              <button
-                onClick={() => setIsExtended(true)}
-                className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-500"
+              <a
+                href="/extended"
+                className="rounded-xl bg-zinc-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-zinc-600"
               >
                 Étendre le contenu
-              </button>
+              </a>
             </div>
 
             <div className="w-full md:w-[340px]">

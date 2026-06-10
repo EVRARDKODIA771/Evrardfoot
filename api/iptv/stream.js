@@ -26,16 +26,22 @@ export default async function handler(req, res) {
     const url =
       `${base}/live/${IPTV_USERNAME.trim()}` +
       `/${IPTV_PASSWORD.trim()}` +
-      `/${String(stream_id).trim()}.m3u8`;
+      `/${stream_id}.m3u8`;
 
-    // TEST
-    const r = await fetch(url);
+    const response = await fetch(url);
 
-    return res.status(200).json({
-      status: r.status,
-      ok: r.ok,
-      finalUrl: url,
-    });
+    if (!response.ok) {
+      return res.status(response.status).send("Flux IPTV indisponible");
+    }
+
+    const playlist = await response.text();
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.apple.mpegurl"
+    );
+
+    return res.status(200).send(playlist);
 
   } catch (err) {
     return res.status(500).json({

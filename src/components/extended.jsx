@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 
-export default function Extended() {
+export default function Extended({ onRestrict }) {
   const videoRef = useRef(null);
+  const hlsRef = useRef(null);
 
   const [categories, setCategories] = useState([]);
   const [channels, setChannels] = useState([]);
@@ -10,51 +11,102 @@ export default function Extended() {
   const [activeChannel, setActiveChannel] = useState(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     loadCategories();
     loadChannels();
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
   }, []);
 
   async function loadCategories() {
-    const res = await fetch("/api/iptv/categories");
-    const data = await res.json();
-    setCategories(data || []);
+    try {
+      const res = await fetch("/api/iptv/categories");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Erreur chargement catégories");
+      }
+
+      setCategories(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   async function loadChannels(categoryId = null) {
-    setLoading(true);
+    try {
+      setLoading(true);
+      setError("");
 
-    const url = categoryId
-      ? `/api/iptv/channels?category_id=${categoryId}`
-      : "/api/iptv/channels";
+      const url = categoryId
+        ? `/api/iptv/channels?category_id=${categoryId}`
+        : "/api/iptv/channels";
 
-    const res = await fetch(url);
-    const data = await res.json();
+      const res = await fetch(url);
+      const data = await res.json();
 
-    setChannels(Array.isArray(data) ? data : []);
-    setLoading(false);
+      if (!res.ok) {
+        throw new Error(data?.message || "Erreur chargement chaînes");
+      }
+
+      setChannels(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message);
+      setChannels([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function playChannel(channel) {
-    setActiveChannel(channel);
+    try {
+      setActiveChannel(channel);
+      setError("");
 
-    const res = await fetch(`/api/iptv/stream?stream_id=${channel.stream_id}`);
-    const data = await res.json();
+      const res = await fetch(`/api/iptv/stream?stream_id=${channel.stream_id}`);
+      const data = await res.json();
 
-    const video = videoRef.current;
-    if (!video || !data.url) return;
+      if (!res.ok) {
+        throw new Error(data?.message || "Erreur chargement du stream");
+      }
 
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(data.url);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play();
-      });
-    } else {
-      video.src = data.url;
-      video.play();
+      const video = videoRef.current;
+      if (!video || !data.url) return;
+
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hlsRef.current = hls;
+
+        hls.loadSource(data.url);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play().catch(() => {});
+        });
+
+        hls.on(Hls.Events.ERROR, (_, eventData) => {
+          if (eventData?.fatal) {
+            setError("Impossible de lire cette chaîne.");
+          }
+        });
+      } else {
+        video.src = data.url;
+        video.play().catch(() => {});
+      }
+    } catch (err) {
+      setError(err.message);
     }
   }
 
@@ -70,7 +122,16 @@ export default function Extended() {
   return (
     <div style={styles.page}>
       <aside style={styles.sidebar}>
-        <h1 style={styles.logo}>EvrardTV</h1>
+        <div style={styles.sidebarTop}>
+          <div>
+            <h1 style={styles.logo}>EvrardTV</h1>
+            <p style={styles.sidebarSub}>IPTV Premium</p>
+          </div>
+
+          <button style={styles.backBtn} onClick={onRestrict}>
+            Retour
+          </button>
+        </div>
 
         <button
           style={{
@@ -106,12 +167,16 @@ export default function Extended() {
         <section style={styles.hero}>
           <div style={styles.heroText}>
             <p style={styles.kicker}>LIVE IPTV</p>
+
             <h2 style={styles.title}>
               {activeChannel ? activeChannel.name : "Choisis une chaîne"}
             </h2>
+
             <p style={styles.subtitle}>
               Interface fluide, moderne, pensée comme une plateforme premium.
             </p>
+
+            {error && <div style={styles.errorBox}>{error}</div>}
           </div>
 
           <div style={styles.playerBox}>
@@ -119,6 +184,7 @@ export default function Extended() {
               ref={videoRef}
               controls
               autoPlay
+              playsInline
               style={styles.video}
               poster={activeChannel?.stream_icon || ""}
             />
@@ -138,32 +204,42 @@ export default function Extended() {
           />
         </div>
 
-        <section style={styles.grid}>
-          {filteredChannels.map((channel) => (
-            <button
-              key={channel.stream_id}
-              style={styles.card}
-              onClick={() => playChannel(channel)}
-            >
-              <div style={styles.poster}>
-                {channel.stream_icon ? (
-                  <img
-                    src={channel.stream_icon}
-                    alt={channel.name}
-                    style={styles.icon}
-                  />
-                ) : (
-                  <span style={styles.fallback}>TV</span>
-                )}
-              </div>
+        {loading ? (
+          <div style={styles.loadingBox}>Chargement des chaînes...</div>
+        ) : (
+          <section style={styles.grid}>
+            {filteredChannels.map((channel) => (
+              <button
+                key={channel.stream_id}
+                style={{
+                  ...styles.card,
+                  border:
+                    activeChannel?.stream_id === channel.stream_id
+                      ? "1px solid #e50914"
+                      : "1px solid rgba(255,255,255,0.08)",
+                }}
+                onClick={() => playChannel(channel)}
+              >
+                <div style={styles.poster}>
+                  {channel.stream_icon ? (
+                    <img
+                      src={channel.stream_icon}
+                      alt={channel.name}
+                      style={styles.icon}
+                    />
+                  ) : (
+                    <span style={styles.fallback}>TV</span>
+                  )}
+                </div>
 
-              <div style={styles.cardInfo}>
-                <strong style={styles.channelName}>{channel.name}</strong>
-                <span style={styles.liveBadge}>● LIVE</span>
-              </div>
-            </button>
-          ))}
-        </section>
+                <div style={styles.cardInfo}>
+                  <strong style={styles.channelName}>{channel.name}</strong>
+                  <span style={styles.liveBadge}>● LIVE</span>
+                </div>
+              </button>
+            ))}
+          </section>
+        )}
       </main>
     </div>
   );
@@ -191,18 +267,41 @@ const styles = {
     top: 0,
   },
 
+  sidebarTop: {
+    marginBottom: 28,
+  },
+
   logo: {
     fontSize: 34,
     fontWeight: 900,
     color: "#e50914",
-    marginBottom: 32,
+    margin: 0,
     letterSpacing: -1,
+  },
+
+  sidebarSub: {
+    marginTop: 4,
+    marginBottom: 16,
+    color: "#aaa",
+    fontSize: 13,
+  },
+
+  backBtn: {
+    width: "100%",
+    background: "rgba(255,255,255,0.1)",
+    color: "white",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 12,
+    padding: "11px 14px",
+    fontWeight: 800,
+    cursor: "pointer",
   },
 
   categoryList: {
     display: "flex",
     flexDirection: "column",
     gap: 8,
+    marginTop: 8,
   },
 
   categoryBtn: {
@@ -253,6 +352,16 @@ const styles = {
     fontSize: 18,
   },
 
+  errorBox: {
+    marginTop: 18,
+    padding: "12px 14px",
+    borderRadius: 14,
+    background: "rgba(229,9,20,0.15)",
+    border: "1px solid rgba(229,9,20,0.35)",
+    color: "#ffb4b4",
+    fontSize: 14,
+  },
+
   playerBox: {
     background: "#111",
     borderRadius: 24,
@@ -291,6 +400,13 @@ const styles = {
     outline: "none",
   },
 
+  loadingBox: {
+    padding: 32,
+    borderRadius: 18,
+    background: "rgba(255,255,255,0.06)",
+    color: "#bbb",
+  },
+
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
@@ -299,7 +415,6 @@ const styles = {
 
   card: {
     background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: 18,
     overflow: "hidden",
     color: "white",

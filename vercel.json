@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/extended",
+      "destination": "/index.html"
+    }
+  ]
+}

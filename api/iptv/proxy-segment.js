@@ -8,14 +8,24 @@ export default async function handler(req, res) {
 
     const targetUrl = decodeURIComponent(url);
 
-    const response = await fetch(targetUrl);
+    const response = await fetch(targetUrl, {
+      headers: {
+        "User-Agent":
+          "VLC/3.0.20 LibVLC/3.0.20",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "Referer": targetUrl,
+        "Origin": new URL(targetUrl).origin,
+      },
+    });
 
     if (!response.ok || !response.body) {
-      return res.status(response.status).send("Segment indisponible");
+      return res.status(response.status).send(`Segment indisponible: ${response.status}`);
     }
 
     res.setHeader("Content-Type", "video/mp2t");
     res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Access-Control-Allow-Origin", "*");
 
     const reader = response.body.getReader();
 

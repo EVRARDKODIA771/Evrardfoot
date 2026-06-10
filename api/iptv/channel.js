@@ -14,34 +14,44 @@ export default async function handler(req, res) {
 
     const { category_id } = req.query;
 
-    const base = IPTV_DNS.replace(/\/+$/, "");
+    const base = IPTV_DNS.trim().replace(/\/+$/, "");
+    const username = IPTV_USERNAME.trim();
+    const password = IPTV_PASSWORD.trim();
 
     let url =
-      `${base}/player_api.php?username=${encodeURIComponent(IPTV_USERNAME)}` +
-      `&password=${encodeURIComponent(IPTV_PASSWORD)}` +
+      `${base}/player_api.php?username=${encodeURIComponent(username)}` +
+      `&password=${encodeURIComponent(password)}` +
       `&action=get_live_streams`;
 
     if (category_id) {
       url += `&category_id=${encodeURIComponent(category_id)}`;
     }
 
-    const r = await fetch(url);
-    const data = await r.json();
+    const response = await fetch(url);
+    const data = await response.json();
 
-    const cleaned = data.map((ch) => ({
-      stream_id: ch.stream_id,
-      name: ch.name,
-      category_id: ch.category_id,
-      stream_icon: ch.stream_icon,
-      epg_channel_id: ch.epg_channel_id,
-      added: ch.added,
-      num: ch.num,
-      stream_type: ch.stream_type,
+    if (!Array.isArray(data)) {
+      return res.status(502).json({
+        error: true,
+        message: "Réponse IPTV invalide pour les chaînes",
+        raw: data,
+      });
+    }
+
+    const cleaned = data.map((channel) => ({
+      stream_id: channel.stream_id,
+      name: channel.name,
+      category_id: channel.category_id,
+      stream_icon: channel.stream_icon,
+      epg_channel_id: channel.epg_channel_id,
+      added: channel.added,
+      num: channel.num,
+      stream_type: channel.stream_type,
     }));
 
-    res.status(200).json(cleaned);
+    return res.status(200).json(cleaned);
   } catch (err) {
-    res.status(500).json({
+    return res.status(500).json({
       error: true,
       message: err.message,
     });

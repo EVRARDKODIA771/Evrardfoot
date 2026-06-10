@@ -1,5 +1,17 @@
+const IPTV_DNS = process.env.IPTV_DNS;
+const IPTV_USERNAME = process.env.IPTV_USERNAME;
+const IPTV_PASSWORD = process.env.IPTV_PASSWORD;
+
+function assertConfig() {
+  if (!IPTV_DNS || !IPTV_USERNAME || !IPTV_PASSWORD) {
+    throw new Error("Variables IPTV manquantes sur Vercel");
+  }
+}
+
 export default function handler(req, res) {
   try {
+    assertConfig();
+
     const { stream_id } = req.query;
 
     if (!stream_id) {
@@ -9,10 +21,19 @@ export default function handler(req, res) {
       });
     }
 
+    const base = IPTV_DNS.trim().replace(/\/+$/, "");
+
+    const httpsBase = base.replace(/^http:\/\//, "https://");
+
+    const url =
+      `${httpsBase}/live/${IPTV_USERNAME.trim()}` +
+      `/${IPTV_PASSWORD.trim()}` +
+      `/${String(stream_id).trim()}.m3u8`;
+
     return res.status(200).json({
-      url: `/api/iptv/proxy-m3u8?stream_id=${encodeURIComponent(stream_id)}`,
+      url,
       stream_id,
-      format: "proxy-m3u8",
+      format: "direct-https-m3u8",
     });
   } catch (err) {
     return res.status(500).json({

@@ -8,7 +8,7 @@ function assertConfig() {
   }
 }
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   try {
     assertConfig();
 
@@ -23,17 +23,41 @@ export default function handler(req, res) {
 
     const base = IPTV_DNS.trim().replace(/\/+$/, "");
 
-    const httpsBase = base.replace(/^http:\/\//, "https://");
+    // Récupération des infos du serveur Xtream
+    const apiUrl =
+      `${base}/player_api.php?username=${encodeURIComponent(IPTV_USERNAME)}` +
+      `&password=${encodeURIComponent(IPTV_PASSWORD)}`;
 
-    const url =
-      `${httpsBase}/live/${IPTV_USERNAME.trim()}` +
+    const apiResponse = await fetch(apiUrl);
+    const apiData = await apiResponse.json();
+
+    const server = apiData.server_info || {};
+
+    const protocol =
+      server.server_protocol === "https"
+        ? "https"
+        : "http";
+
+    const host = server.url || new URL(base).hostname;
+
+    const port =
+      protocol === "https"
+        ? server.https_port
+        : server.port;
+
+    const streamUrl =
+      `${protocol}://${host}` +
+      (port ? `:${port}` : "") +
+      `/live/${IPTV_USERNAME.trim()}` +
       `/${IPTV_PASSWORD.trim()}` +
       `/${String(stream_id).trim()}.m3u8`;
 
     return res.status(200).json({
-      url,
+      url: streamUrl,
       stream_id,
-      format: "direct-https-m3u8",
+      protocol,
+      port,
+      format: "m3u8",
     });
   } catch (err) {
     return res.status(500).json({

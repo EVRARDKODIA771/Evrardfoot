@@ -80,49 +80,55 @@ export default function Extended() {
   }
 
   async function playChannel(channel) {
-    try {
-      setActiveChannel(channel);
-      setError("");
+  try {
+    setActiveChannel(channel);
+    setError("");
 
-      const res = await fetch(`/api/iptv/stream?stream_id=${channel.stream_id}`);
-      const data = await safeJson(res);
+    const video = videoRef.current;
+    if (!video) return;
 
-      if (!res.ok) {
-        throw new Error(data?.message || "Erreur chargement du stream");
-      }
-
-      const video = videoRef.current;
-      if (!video || !data.url) return;
-
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-
-      if (Hls.isSupported()) {
-        const hls = new Hls();
-        hlsRef.current = hls;
-
-        hls.loadSource(data.url);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.play().catch(() => {});
-        });
-
-        hls.on(Hls.Events.ERROR, (_, eventData) => {
-          if (eventData?.fatal) {
-            setError("Impossible de lire cette chaîne.");
-          }
-        });
-      } else {
-        video.src = data.url;
-        video.play().catch(() => {});
-      }
-    } catch (err) {
-      setError(err.message);
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
     }
+
+    const streamUrl =
+      `/api/iptv/stream?stream_id=${channel.stream_id}`;
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+      });
+
+      hlsRef.current = hls;
+
+      hls.loadSource(streamUrl);
+      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        video.play().catch(() => {});
+      });
+
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        console.error("HLS ERROR", data);
+
+        if (data?.fatal) {
+          setError(
+            `Erreur HLS : ${data.type} / ${data.details}`
+          );
+        }
+      });
+    } else if (
+      video.canPlayType("application/vnd.apple.mpegurl")
+    ) {
+      video.src = streamUrl;
+      video.play().catch(() => {});
+    }
+  } catch (err) {
+    setError(err.message);
   }
+}
 
   function selectCategory(cat) {
     setActiveCategory(cat.category_id);

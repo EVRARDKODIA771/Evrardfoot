@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 
-export default function Extended({ onRestrict }) {
+export default function Extended() {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
 
@@ -25,10 +25,24 @@ export default function Extended({ onRestrict }) {
     };
   }, []);
 
+  async function safeJson(res) {
+    const text = await res.text();
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(
+        `Réponse invalide du serveur. Status ${res.status}. Vérifie que la route API existe.`
+      );
+    }
+  }
+
   async function loadCategories() {
     try {
+      setError("");
+
       const res = await fetch("/api/iptv/categories");
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) {
         throw new Error(data?.message || "Erreur chargement catégories");
@@ -50,7 +64,7 @@ export default function Extended({ onRestrict }) {
         : "/api/iptv/channels";
 
       const res = await fetch(url);
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) {
         throw new Error(data?.message || "Erreur chargement chaînes");
@@ -71,7 +85,7 @@ export default function Extended({ onRestrict }) {
       setError("");
 
       const res = await fetch(`/api/iptv/stream?stream_id=${channel.stream_id}`);
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) {
         throw new Error(data?.message || "Erreur chargement du stream");
@@ -128,15 +142,15 @@ export default function Extended({ onRestrict }) {
             <p style={styles.sidebarSub}>IPTV Premium</p>
           </div>
 
-          <button style={styles.backBtn} onClick={onRestrict}>
+          <a href="/" style={styles.backBtn}>
             Retour
-          </button>
+          </a>
         </div>
 
         <button
           style={{
             ...styles.categoryBtn,
-            background: activeCategory === null ? "#e50914" : "transparent",
+            background: activeCategory === null ? "#3f3f46" : "transparent",
           }}
           onClick={() => {
             setActiveCategory(null);
@@ -153,7 +167,7 @@ export default function Extended({ onRestrict }) {
               style={{
                 ...styles.categoryBtn,
                 background:
-                  activeCategory === cat.category_id ? "#e50914" : "transparent",
+                  activeCategory === cat.category_id ? "#3f3f46" : "transparent",
               }}
               onClick={() => selectCategory(cat)}
             >
@@ -215,7 +229,7 @@ export default function Extended({ onRestrict }) {
                   ...styles.card,
                   border:
                     activeChannel?.stream_id === channel.stream_id
-                      ? "1px solid #e50914"
+                      ? "1px solid #d4d4d8"
                       : "1px solid rgba(255,255,255,0.08)",
                 }}
                 onClick={() => playChannel(channel)}
@@ -250,7 +264,7 @@ const styles = {
     minHeight: "100vh",
     display: "flex",
     background:
-      "radial-gradient(circle at top left, #2b0000 0%, #080808 35%, #000 100%)",
+      "radial-gradient(circle at top left, #27272a 0%, #111111 38%, #000000 100%)",
     color: "white",
     fontFamily:
       "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -259,7 +273,7 @@ const styles = {
   sidebar: {
     width: 280,
     padding: 24,
-    background: "rgba(0,0,0,0.65)",
+    background: "rgba(0,0,0,0.72)",
     borderRight: "1px solid rgba(255,255,255,0.08)",
     height: "100vh",
     overflowY: "auto",
@@ -274,7 +288,7 @@ const styles = {
   logo: {
     fontSize: 34,
     fontWeight: 900,
-    color: "#e50914",
+    color: "#f4f4f5",
     margin: 0,
     letterSpacing: -1,
   },
@@ -282,12 +296,16 @@ const styles = {
   sidebarSub: {
     marginTop: 4,
     marginBottom: 16,
-    color: "#aaa",
+    color: "#a1a1aa",
     fontSize: 13,
   },
 
   backBtn: {
+    display: "block",
     width: "100%",
+    boxSizing: "border-box",
+    textAlign: "center",
+    textDecoration: "none",
     background: "rgba(255,255,255,0.1)",
     color: "white",
     border: "1px solid rgba(255,255,255,0.12)",
@@ -335,7 +353,7 @@ const styles = {
   },
 
   kicker: {
-    color: "#e50914",
+    color: "#d4d4d8",
     fontWeight: 900,
     letterSpacing: 2,
   },
@@ -356,9 +374,9 @@ const styles = {
     marginTop: 18,
     padding: "12px 14px",
     borderRadius: 14,
-    background: "rgba(229,9,20,0.15)",
-    border: "1px solid rgba(229,9,20,0.35)",
-    color: "#ffb4b4",
+    background: "rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.18)",
+    color: "#f4f4f5",
     fontSize: 14,
   },
 
@@ -425,7 +443,7 @@ const styles = {
 
   poster: {
     height: 120,
-    background: "linear-gradient(135deg, #222, #050505)",
+    background: "linear-gradient(135deg, #27272a, #050505)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -440,7 +458,7 @@ const styles = {
   fallback: {
     fontSize: 28,
     fontWeight: 900,
-    color: "#e50914",
+    color: "#d4d4d8",
   },
 
   cardInfo: {
@@ -456,7 +474,7 @@ const styles = {
   },
 
   liveBadge: {
-    color: "#e50914",
+    color: "#d4d4d8",
     fontSize: 12,
     fontWeight: 900,
   },

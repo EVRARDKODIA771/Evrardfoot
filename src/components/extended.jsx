@@ -6,9 +6,21 @@ export default function Extended() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
+const ACCESS_PASSWORD = "14082022";
+
+const [authenticated, setAuthenticated] = useState(
+  localStorage.getItem("iptv_auth") === "ok"
+);
+
+const [password, setPassword] = useState("");
+
+useEffect(() => {
+
+  if (authenticated) {
     loadChannels();
-  }, []);
+  }
+
+}, [authenticated]);
 
   async function loadChannels() {
     try {
@@ -29,8 +41,12 @@ function openChannel(channel) {
 
   console.log("OPEN CHANNEL:", channel);
 
+function openChannel(channel) {
+
+  console.log("OPEN CHANNEL:", channel);
+
   window.location.href =
-    `/api/iptv/play?stream_id=${channel.stream_id}&password=14082022`;
+    `/api/iptv/play?stream_id=${channel.stream_id}`;
 }
 
   const filteredChannels = channels
@@ -58,6 +74,98 @@ function openChannel(channel) {
 
       return nameA.localeCompare(nameB);
     });
+
+if (!authenticated) {
+
+  return (
+    <div className="page">
+
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center"
+        }}
+      >
+
+        <div
+          style={{
+            width: "350px",
+            background: "#171717",
+            padding: "25px",
+            borderRadius: "16px",
+            border: "1px solid #2a2a2a"
+          }}
+        >
+
+          <h2
+            style={{
+              marginBottom: "20px",
+              color: "white"
+            }}
+          >
+            Accès IPTV
+          </h2>
+
+          <input
+            type="password"
+            placeholder="Entrez le mot de passe"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              width: "100%",
+              height: "46px",
+              background: "#111",
+              border: "1px solid #333",
+              borderRadius: "10px",
+              color: "white",
+              padding: "0 12px",
+              marginBottom: "15px"
+            }}
+          />
+
+          <button
+            style={{
+              width: "100%",
+              height: "46px",
+              border: "none",
+              borderRadius: "10px",
+              background: "#2d7ef7",
+              color: "white",
+              cursor: "pointer"
+            }}
+            onClick={() => {
+
+              if (password === ACCESS_PASSWORD) {
+
+                localStorage.setItem(
+                  "iptv_auth",
+                  "ok"
+                );
+
+                setAuthenticated(true);
+
+              } else {
+
+                alert(
+                  "Mot de passe incorrect"
+                );
+
+              }
+
+            }}
+          >
+            Entrer
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
 
   return (
     <div className="page">

@@ -7,20 +7,32 @@ export default async function handler(req, res) {
     const { stream_id } = req.query;
 
     if (!stream_id) {
-      return res.status(400).json({ error: "stream_id manquant" });
+      return res.status(400).json({
+        error: "stream_id manquant",
+      });
     }
 
     const base = IPTV_DNS.replace(/\/+$/, "");
 
-    const finalUrl =
+    const initialUrl =
       `${base}/live/${IPTV_USERNAME}/${IPTV_PASSWORD}/${stream_id}.m3u8`;
 
-    // Redirection vers la vraie URL IPTV
-    return res.redirect(302, finalUrl);
+    const response = await fetch(initialUrl, {
+      redirect: "follow",
+    });
+
+    return res.status(200).json({
+      stream_id,
+      initialUrl,
+      finalUrl: response.url,
+      status: response.status,
+      contentType: response.headers.get("content-type"),
+    });
+
   } catch (error) {
-    res.status(500).json({
-      error: "Erreur génération URL stream",
-      details: error.message,
+    return res.status(500).json({
+      error: error.message,
+      stack: error.stack,
     });
   }
 }

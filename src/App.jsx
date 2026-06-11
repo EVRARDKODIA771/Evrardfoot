@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import ChannelCard from "./components/ChannelCard";
 import VideoPlayer from "./components/VideoPlayer";
 import Extended from "./components/extended.jsx";
+import VideoXPlayer from "./components/VideoXPlayer";
 import { channels } from "./data/channels";
 
 const PC_DOWNLOAD_URL =
@@ -55,8 +56,10 @@ function getPlatformInfo() {
 }
 
 export default function App() {
-  const platform = getPlatformInfo();
-  const isExtendedPage = window.location.pathname === "/extended";
+const platform = getPlatformInfo();
+const pathname = window.location.pathname;
+const isExtendedPage = pathname === "/extended";
+const isVideoXPlayerPage = pathname === "/player";
 
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);
@@ -191,8 +194,8 @@ export default function App() {
 
   useEffect(() => {
     if (!platform.isTV) return;
-    if (selectedChannel) return;
-    if (isExtendedPage) return;
+  if (selectedChannel) return;
+if (isExtendedPage || isVideoXPlayerPage) return;
 
     const handleKeyDown = (e) => {
       const key = e.key;
@@ -274,10 +277,17 @@ export default function App() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown, true);
     };
-  }, [platform.isTV, tvItems, focusedIndex, selectedChannel, isExtendedPage]);
+  }, [
+  platform.isTV,
+  tvItems,
+  focusedIndex,
+  selectedChannel,
+  isExtendedPage,
+  isVideoXPlayerPage,
+]);
 
   useEffect(() => {
-    if (isExtendedPage) return;
+if (isExtendedPage || isVideoXPlayerPage) return;
 
     const syncFromUrl = () => {
       const params = new URLSearchParams(window.location.search);
@@ -299,7 +309,7 @@ export default function App() {
     return () => {
       window.removeEventListener("popstate", syncFromUrl);
     };
-  }, [isExtendedPage]);
+ }, [isExtendedPage, isVideoXPlayerPage]);
 
   const sectionTitle =
     activeTab === "favorites"
@@ -319,8 +329,12 @@ export default function App() {
     "ring-4 ring-white scale-[1.04] bg-white/10 shadow-[0_0_35px_rgba(255,255,255,0.35)]";
 
   if (isExtendedPage) {
-    return <Extended />;
-  }
+  return <Extended />;
+}
+
+if (isVideoXPlayerPage) {
+  return <VideoXPlayer />;
+}
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#050505] pb-20 text-white">

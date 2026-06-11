@@ -6,12 +6,6 @@ export default async function handler(req, res) {
   try {
     const { stream_id } = req.query;
 
-    if (!stream_id) {
-      return res.status(400).json({
-        error: "stream_id manquant",
-      });
-    }
-
     const base = IPTV_DNS.replace(/\/+$/, "");
 
     const initialUrl =
@@ -21,18 +15,18 @@ export default async function handler(req, res) {
       redirect: "follow",
     });
 
-    return res.status(200).json({
-      stream_id,
-      initialUrl,
-      finalUrl: response.url,
-      status: response.status,
-      contentType: response.headers.get("content-type"),
-    });
+    const playlist = await response.text();
+
+    res.setHeader(
+      "Content-Type",
+      "application/x-mpegurl"
+    );
+
+    return res.status(200).send(playlist);
 
   } catch (error) {
     return res.status(500).json({
       error: error.message,
-      stack: error.stack,
     });
   }
 }

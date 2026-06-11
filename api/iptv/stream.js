@@ -31,11 +31,26 @@ export default async function handler(req, res) {
       return res.status(response.status).send("Flux indisponible");
     }
 
-    const playlist = await response.text();
+    let playlist = await response.text();
 
-    return res.status(200).send(
-      playlist.split("\n").slice(0, 100).join("\n")
+    // Réécriture des fragments .ts
+    playlist = playlist.replace(
+      /^\/hlsr\/(.+)$/gm,
+      (_, path) =>
+        `/api/iptv/segment?path=${encodeURIComponent("/hlsr/" + path)}`
     );
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.apple.mpegurl"
+    );
+
+    res.setHeader(
+      "Cache-Control",
+      "no-cache"
+    );
+
+    return res.status(200).send(playlist);
 
   } catch (err) {
     return res.status(500).send(err.message);

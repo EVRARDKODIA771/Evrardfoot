@@ -12,20 +12,51 @@ export default async function handler(req, res) {
 
     const base = IPTV_DNS.replace(/\/+$/, "");
 
-    const initialUrl =
+    const playlistUrl =
       `${base}/live/${IPTV_USERNAME}/${IPTV_PASSWORD}/${stream_id}.m3u8`;
 
-    const response = await fetch(initialUrl, {
+    const response = await fetch(playlistUrl, {
       redirect: "follow",
     });
 
-    const playlist = await response.text();
+    if (!response.ok) {
+      return res
+        .status(response.status)
+        .send(`Erreur IPTV ${response.status}`);
+    }
 
-    res.setHeader("Content-Type", "text/plain");
+    let playlist = await response.text();
+
+    /*
+      Exemple IPTV :
+
+      /hlsr/TOKEN/.../56544_2068.ts
+
+      devient :
+
+      /api/hlsr/TOKEN/.../56544_2068.ts
+    */
+
+    playlist = playlist.replace(
+      /\/hlsr\//g,
+      "/api/hlsr/"
+    );
+
+    res.setHeader(
+      "Content-Type",
+      "application/x-mpegurl"
+    );
+
+    res.setHeader(
+      "Cache-Control",
+      "no-store"
+    );
 
     return res.status(200).send(playlist);
 
   } catch (error) {
+    console.error(error);
+
     return res.status(500).send(error.message);
   }
 }

@@ -58,8 +58,15 @@ function getPlatformInfo() {
 export default function App() {
 const platform = getPlatformInfo();
 const pathname = window.location.pathname;
+
+const params = new URLSearchParams(
+  window.location.search
+);
+
 const isExtendedPage = pathname === "/extended";
-const isVideoXPlayerPage = pathname === "/player";
+
+const isVideoXPlayerPage =
+  params.get("player") === "1";
 
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);

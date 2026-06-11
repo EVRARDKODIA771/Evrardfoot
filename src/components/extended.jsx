@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 export default function Extended() {
-  const navigate = useNavigate();
 
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +14,8 @@ export default function Extended() {
       const response = await fetch("/api/iptv/channels");
       const data = await response.json();
 
+      console.log("IPTV CHANNELS:", data);
+
       setChannels(data || []);
     } catch (err) {
       console.error(err);
@@ -25,11 +25,13 @@ export default function Extended() {
   }
 
   function openChannel(channel) {
-    navigate(
+
+    console.log("OPEN CHANNEL:", channel);
+
+    window.location.href =
       `/player?stream=${encodeURIComponent(
         channel.stream_url
-      )}&name=${encodeURIComponent(channel.name)}`
-    );
+      )}&name=${encodeURIComponent(channel.name)}`;
   }
 
   return (
@@ -44,6 +46,7 @@ export default function Extended() {
       <main className="content">
 
         <div className="section">
+
           <h2>France</h2>
 
           {loading ? (
@@ -59,6 +62,7 @@ export default function Extended() {
                   className="card"
                   onClick={() => openChannel(channel)}
                 >
+
                   <div className="logoBox">
 
                     {channel.logo ? (
@@ -77,11 +81,13 @@ export default function Extended() {
                   <div className="name">
                     {channel.name}
                   </div>
+
                 </div>
               ))}
 
             </div>
           )}
+
         </div>
 
       </main>

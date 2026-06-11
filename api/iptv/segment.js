@@ -17,29 +17,30 @@ export default async function handler(req, res) {
     }
 
     const base = IPTV_DNS.trim().replace(/\/+$/, "");
+    const remoteUrl = `${base}${decodeURIComponent(path)}`;
 
-    const remoteUrl =
-      `${base}${decodeURIComponent(path)}`;
-
-    const response = await fetch(remoteUrl);
+    const response = await fetch(remoteUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/137.0 Safari/537.36",
+        "Referer": base + "/",
+        "Origin": base,
+        "Accept": "*/*",
+      },
+    });
 
     if (!response.ok) {
-      return res
-        .status(response.status)
-        .send("Segment IPTV introuvable");
+      const text = await response.text().catch(() => "");
+      return res.status(response.status).send(
+        `IPTV ${response.status}\n${text}`
+      );
     }
 
     const arrayBuffer = await response.arrayBuffer();
 
     res.setHeader(
       "Content-Type",
-      response.headers.get("content-type") ||
-        "video/mp2t"
-    );
-
-    res.setHeader(
-      "Cache-Control",
-      "public, max-age=5"
+      response.headers.get("content-type") || "video/mp2t"
     );
 
     return res

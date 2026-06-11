@@ -33,12 +33,10 @@ export default async function handler(req, res) {
 
     const playlist = await response.text();
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.apple.mpegurl"
-    );
-
-    return res.status(200).send(playlist);
+    return res
+      .status(200)
+      .type("text/plain")
+      .send(playlist.substring(0, 5000));
 
   } catch (err) {
     return res.status(500).send(err.message);

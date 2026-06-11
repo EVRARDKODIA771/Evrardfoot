@@ -33,11 +33,12 @@ export default async function handler(req, res) {
 
     let playlist = await response.text();
 
-    // Réécriture des fragments .ts
     playlist = playlist.replace(
       /^\/hlsr\/(.+)$/gm,
-      (_, path) =>
-        `/api/iptv/segment?path=${encodeURIComponent("/hlsr/" + path)}`
+      (_, p) =>
+        `/api/iptv/segment?path=${encodeURIComponent(
+          `/hlsr/${p}`
+        )}`
     );
 
     res.setHeader(

@@ -6,6 +6,10 @@ export default async function handler(req, res) {
   try {
     const { stream_id } = req.query;
 
+    if (!stream_id) {
+      return res.status(400).send("stream_id manquant");
+    }
+
     const base = IPTV_DNS.replace(/\/+$/, "");
 
     const initialUrl =
@@ -17,16 +21,11 @@ export default async function handler(req, res) {
 
     const playlist = await response.text();
 
-    res.setHeader(
-      "Content-Type",
-      "application/x-mpegurl"
-    );
+    res.setHeader("Content-Type", "text/plain");
 
     return res.status(200).send(playlist);
 
   } catch (error) {
-    return res.status(500).json({
-      error: error.message,
-    });
+    return res.status(500).send(error.message);
   }
 }

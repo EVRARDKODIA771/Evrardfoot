@@ -13,38 +13,43 @@ export default async function handler(req, res) {
     const remoteUrl =
       `${base}/hlsr/${path.join("/")}`;
 
-    console.log("HLS TS PROXY =>", remoteUrl);
+    console.log("=================================");
+    console.log("PATH =", path.join("/"));
+    console.log("REMOTE =", remoteUrl);
 
-    const response = await fetch(remoteUrl);
+    const response = await fetch(remoteUrl, {
+      redirect: "follow",
+    });
+
+    console.log("STATUS =", response.status);
+    console.log("FINAL URL =", response.url);
+    console.log(
+      "CONTENT-TYPE =",
+      response.headers.get("content-type")
+    );
 
     if (!response.ok) {
-      return res
-        .status(response.status)
-        .send(`Erreur IPTV: ${response.status}`);
+      return res.status(response.status).json({
+        remoteUrl,
+        finalUrl: response.url,
+        status: response.status,
+      });
     }
 
     const buffer =
       Buffer.from(await response.arrayBuffer());
 
-    const contentType =
-      response.headers.get("content-type") ||
-      "video/mp2t";
-
     res.setHeader(
       "Content-Type",
-      contentType
-    );
-
-    res.setHeader(
-      "Cache-Control",
-      "no-store"
+      response.headers.get("content-type") ||
+      "video/mp2t"
     );
 
     return res.status(200).send(buffer);
 
   } catch (error) {
-    console.error(error);
-
-    return res.status(500).send(error.message);
+    return res.status(500).json({
+      error: error.message,
+    });
   }
 }

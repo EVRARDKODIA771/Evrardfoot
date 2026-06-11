@@ -4,6 +4,7 @@ export default function Extended() {
 
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     loadChannels();
@@ -34,20 +35,42 @@ export default function Extended() {
       )}&name=${encodeURIComponent(channel.name)}`;
   }
 
+  const filteredChannels = channels.filter((channel) =>
+    channel.name
+      ?.toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
   return (
     <div className="page">
 
       <header className="header">
+
         <div className="logo">
-          TV
+          IPTV FRANCE
         </div>
+
       </header>
 
       <main className="content">
 
         <div className="section">
 
-          <h2>France</h2>
+          <div className="searchContainer">
+
+            <input
+              type="text"
+              placeholder="Rechercher une chaîne..."
+              value={search}
+              onInput={(e) => setSearch(e.target.value)}
+              className="searchInput"
+            />
+
+          </div>
+
+          <h2>
+            France ({filteredChannels.length})
+          </h2>
 
           {loading ? (
             <div className="loading">
@@ -56,7 +79,7 @@ export default function Extended() {
           ) : (
             <div className="grid">
 
-              {channels.map((channel) => (
+              {filteredChannels.map((channel) => (
                 <div
                   key={channel.stream_id}
                   className="card"
@@ -111,12 +134,42 @@ export default function Extended() {
 
       .logo{
         font-size:16px;
-        font-weight:600;
+        font-weight:700;
         letter-spacing:1px;
       }
 
       .content{
         padding:25px;
+      }
+
+      .searchContainer{
+        margin-bottom:20px;
+      }
+
+      .searchInput{
+        width:100%;
+        max-width:500px;
+        height:46px;
+
+        background:#171717;
+        border:1px solid #2c2c2c;
+        border-radius:12px;
+
+        padding:0 15px;
+
+        color:white;
+        font-size:14px;
+
+        outline:none;
+        transition:.2s;
+      }
+
+      .searchInput:focus{
+        border-color:#666;
+      }
+
+      .searchInput::placeholder{
+        color:#888;
       }
 
       .section h2{
@@ -179,6 +232,7 @@ export default function Extended() {
 
       .loading{
         padding:40px;
+        color:#aaa;
       }
 
       `}</style>

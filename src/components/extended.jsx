@@ -1,4 +1,3 @@
-Donne moi le code complet de Extender.jsxmtn, voici lancien 
 import React, { useEffect, useState } from "react";
 
 

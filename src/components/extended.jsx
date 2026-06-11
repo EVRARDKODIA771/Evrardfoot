@@ -35,11 +35,31 @@ export default function Extended() {
       )}&name=${encodeURIComponent(channel.name)}`;
   }
 
-  const filteredChannels = channels.filter((channel) =>
+const filteredChannels = channels
+  .filter((channel) =>
     channel.name
       ?.toLowerCase()
       .includes(search.toLowerCase())
-  );
+  )
+  .sort((a, b) => {
+
+    const nameA = a.name.toLowerCase();
+    const nameB = b.name.toLowerCase();
+
+    const aBein = nameA.includes("bein");
+    const bBein = nameB.includes("bein");
+
+    if (aBein && !bBein) return -1;
+    if (!aBein && bBein) return 1;
+
+    const aCanal = nameA.includes("canal");
+    const bCanal = nameB.includes("canal");
+
+    if (aCanal && !bCanal) return -1;
+    if (!aCanal && bCanal) return 1;
+
+    return nameA.localeCompare(nameB);
+  });
 
   return (
     <div className="page">

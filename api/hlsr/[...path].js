@@ -1,5 +1,7 @@
 const IPTV_DNS = process.env.IPTV_DNS;
-
+export default function handler(req, res) {
+  return res.status(200).send("HLS ROUTE OK");
+}
 export default async function handler(req, res) {
   try {
     const { path } = req.query;

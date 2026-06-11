@@ -30,7 +30,7 @@ export default function Extended() {
     console.log("OPEN CHANNEL:", channel);
 
     window.location.href =
-      `/player?stream=${encodeURIComponent(
+      `/?player=1&stream=${encodeURIComponent(
         channel.stream_url
       )}&name=${encodeURIComponent(channel.name)}`;
   }
@@ -150,16 +150,12 @@ export default function Extended() {
         width:100%;
         max-width:500px;
         height:46px;
-
         background:#171717;
         border:1px solid #2c2c2c;
         border-radius:12px;
-
         padding:0 15px;
-
         color:white;
         font-size:14px;
-
         outline:none;
         transition:.2s;
       }

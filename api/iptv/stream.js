@@ -33,10 +33,9 @@ export default async function handler(req, res) {
 
     const playlist = await response.text();
 
-    return res
-      .status(200)
-      .type("text/plain")
-      .send(playlist.substring(0, 5000));
+    return res.status(200).send(
+      playlist.split("\n").slice(0, 100).join("\n")
+    );
 
   } catch (err) {
     return res.status(500).send(err.message);

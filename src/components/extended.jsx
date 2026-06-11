@@ -25,13 +25,13 @@ export default function Extended() {
     }
   }
 
-  function openChannel(channel) {
+function openChannel(channel) {
 
-    console.log("OPEN CHANNEL:", channel);
+  console.log("OPEN CHANNEL:", channel);
 
-    window.location.href =
-      `/api/iptv/play?stream_id=${channel.stream_id}`;
-  }
+  window.location.href =
+    `/api/iptv/play?stream_id=${channel.stream_id}&password=14082022`;
+}
 
   const filteredChannels = channels
     .filter((channel) =>

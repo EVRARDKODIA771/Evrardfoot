@@ -2,17 +2,10 @@ const IPTV_DNS = process.env.IPTV_DNS;
 const IPTV_USERNAME = process.env.IPTV_USERNAME;
 const IPTV_PASSWORD = process.env.IPTV_PASSWORD;
 
-const ACCESS_PASSWORD = "14082022";
-
 export default async function handler(req, res) {
   try {
-    const { stream_id, password } = req.query;
 
-    if (password !== ACCESS_PASSWORD) {
-      return res.status(403).json({
-        error: "Accès refusé",
-      });
-    }
+    const { stream_id } = req.query;
 
     if (!stream_id) {
       return res.status(400).json({
@@ -38,10 +31,12 @@ export default async function handler(req, res) {
     return res.redirect(302, targetUrl);
 
   } catch (err) {
+
     console.error("PLAY ERROR:", err);
 
     return res.status(500).json({
       error: err.message,
     });
+
   }
 }

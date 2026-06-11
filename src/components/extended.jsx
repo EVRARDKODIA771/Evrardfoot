@@ -30,36 +30,34 @@ export default function Extended() {
     console.log("OPEN CHANNEL:", channel);
 
     window.location.href =
-      `/?player=1&stream=${encodeURIComponent(
-        channel.stream_url
-      )}&name=${encodeURIComponent(channel.name)}`;
+      `/api/iptv/play?stream_id=${channel.stream_id}`;
   }
 
-const filteredChannels = channels
-  .filter((channel) =>
-    channel.name
-      ?.toLowerCase()
-      .includes(search.toLowerCase())
-  )
-  .sort((a, b) => {
+  const filteredChannels = channels
+    .filter((channel) =>
+      channel.name
+        ?.toLowerCase()
+        .includes(search.toLowerCase())
+    )
+    .sort((a, b) => {
 
-    const nameA = a.name.toLowerCase();
-    const nameB = b.name.toLowerCase();
+      const nameA = a.name.toLowerCase();
+      const nameB = b.name.toLowerCase();
 
-    const aBein = nameA.includes("bein");
-    const bBein = nameB.includes("bein");
+      const aBein = nameA.includes("bein");
+      const bBein = nameB.includes("bein");
 
-    if (aBein && !bBein) return -1;
-    if (!aBein && bBein) return 1;
+      if (aBein && !bBein) return -1;
+      if (!aBein && bBein) return 1;
 
-    const aCanal = nameA.includes("canal");
-    const bCanal = nameB.includes("canal");
+      const aCanal = nameA.includes("canal");
+      const bCanal = nameB.includes("canal");
 
-    if (aCanal && !bCanal) return -1;
-    if (!aCanal && bCanal) return 1;
+      if (aCanal && !bCanal) return -1;
+      if (!aCanal && bCanal) return 1;
 
-    return nameA.localeCompare(nameB);
-  });
+      return nameA.localeCompare(nameB);
+    });
 
   return (
     <div className="page">

@@ -27,19 +27,10 @@ export default async function handler(req, res) {
 
     let playlist = await response.text();
 
-    /*
-      Exemple IPTV :
-
-      /hlsr/TOKEN/.../56544_2068.ts
-
-      devient :
-
-      /api/hlsr/TOKEN/.../56544_2068.ts
-    */
-
     playlist = playlist.replace(
-      /\/hlsr\//g,
-      "/api/hlsr/"
+      /\/hlsr\/([^\r\n]+)/g,
+      (_, path) =>
+        `/api/iptv/segment?path=${encodeURIComponent(path)}`
     );
 
     res.setHeader(

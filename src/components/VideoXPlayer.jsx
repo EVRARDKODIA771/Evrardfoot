@@ -1,32 +1,28 @@
 import React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function VideoXPlayer() {
 
-  const navigate = useNavigate();
+  const params = new URLSearchParams(window.location.search);
 
-  const [params] = useSearchParams();
+  const stream = decodeURIComponent(
+    params.get("stream") || ""
+  );
 
-  const stream =
-    decodeURIComponent(
-      params.get("stream") || ""
-    );
-
-  const name =
-    decodeURIComponent(
-      params.get("name") || "Chaîne"
-    );
+  const name = decodeURIComponent(
+    params.get("name") || "Chaîne"
+  );
 
   if (!stream) {
     return (
       <div
         style={{
-          background:"#000",
-          color:"#fff",
-          height:"100vh",
-          display:"flex",
-          alignItems:"center",
-          justifyContent:"center"
+          background: "#000",
+          color: "#fff",
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "18px",
         }}
       >
         Flux introuvable
@@ -41,7 +37,7 @@ export default function VideoXPlayer() {
 
         <button
           className="backBtn"
-          onClick={() => navigate(-1)}
+          onClick={() => window.history.back()}
         >
           ← Retour
         </button>
@@ -85,6 +81,7 @@ export default function VideoXPlayer() {
         border-radius:8px;
         padding:8px 14px;
         cursor:pointer;
+        transition:.2s;
       }
 
       .backBtn:hover{
@@ -95,6 +92,7 @@ export default function VideoXPlayer() {
         margin-left:15px;
         color:white;
         font-size:14px;
+        font-weight:600;
       }
 
       .player{

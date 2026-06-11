@@ -1,4 +1,6 @@
+Donne moi le code complet de Extender.jsxmtn, voici lancien 
 import React, { useEffect, useState } from "react";
+
 
 export default function Extended() {
 
@@ -14,7 +16,7 @@ const [authenticated, setAuthenticated] = useState(
 
 const [password, setPassword] = useState("");
 
-useEffect(() => {
+  useEffect(() => {
 
   if (authenticated) {
     loadChannels();
@@ -36,10 +38,6 @@ useEffect(() => {
       setLoading(false);
     }
   }
-
-function openChannel(channel) {
-
-  console.log("OPEN CHANNEL:", channel);
 
 function openChannel(channel) {
 
@@ -78,6 +76,7 @@ function openChannel(channel) {
 if (!authenticated) {
 
   return (
+
     <div className="page">
 
       <div
@@ -164,9 +163,9 @@ if (!authenticated) {
       </div>
 
     </div>
+
   );
 }
-
   return (
     <div className="page">
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import ChannelCard from "./components/ChannelCard";
 import VideoPlayer from "./components/VideoPlayer";
 import Extended from "./components/extended";
-import VideoXPlayer from "./components/videoXplayer";
+import VideoXPlayer from "./components/VideoXPlayer";
 import { channels } from "./data/channels";
 
 const PC_DOWNLOAD_URL =

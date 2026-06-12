@@ -42,10 +42,14 @@ function openChannel(channel) {
 
   alert("CLICK OK");
 
+  const url =
+    `http://rbvbi.candymarta.com/live/9SF5YVV/RXXPJ9E/${channel.stream_id}.m3u8`;
+
   window.parent.postMessage(
     {
       type: "OPEN_VIDEO",
-      url: "TEST"
+      url: url,
+      stream_id: channel.stream_id
     },
     "*"
   );

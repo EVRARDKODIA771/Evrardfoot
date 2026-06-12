@@ -39,19 +39,29 @@ const [password, setPassword] = useState("");
   }
 
 function openChannel(channel) {
+  const url =
+    `http://rbvbi.candymarta.com/live/9SF5YVV/RXXPJ9E/${channel.stream_id}.m3u8`;
 
   console.log("OPEN CHANNEL:", channel);
+  console.log("SEND POSTMESSAGE:", url);
 
   window.parent.postMessage(
     {
       type: "OPEN_VIDEO",
-      stream_id: channel.stream_id,
-      url:
-        `http://rbvbi.candymarta.com/live/9SF5YVV/RXXPJ9E/${channel.stream_id}.m3u8`
+      url: url,
+      stream_id: channel.stream_id
+    },
+    "https://evrardfoot.vercel.app"
+  );
+
+  window.top.postMessage(
+    {
+      type: "OPEN_VIDEO",
+      url: url,
+      stream_id: channel.stream_id
     },
     "*"
   );
-
 }
 
   const filteredChannels = channels

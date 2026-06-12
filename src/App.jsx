@@ -55,7 +55,16 @@ function getPlatformInfo() {
 
 export default function App() {
 const platform = getPlatformInfo();
+const pathname = window.location.pathname;
 
+const params = new URLSearchParams(
+  window.location.search
+);
+
+const isExtendedPage = pathname === "/extended";
+
+const isVideoXPlayerPage =
+  params.get("player") === "1";
 
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);
@@ -191,7 +200,7 @@ const platform = getPlatformInfo();
   useEffect(() => {
     if (!platform.isTV) return;
   if (selectedChannel) return;
-
+if (isExtendedPage || isVideoXPlayerPage) return;
 
     const handleKeyDown = (e) => {
       const key = e.key;
@@ -278,9 +287,12 @@ const platform = getPlatformInfo();
   tvItems,
   focusedIndex,
   selectedChannel,
+  isExtendedPage,
+  isVideoXPlayerPage,
 ]);
 
   useEffect(() => {
+if (isExtendedPage || isVideoXPlayerPage) return;
 
     const syncFromUrl = () => {
       const params = new URLSearchParams(window.location.search);
@@ -302,7 +314,7 @@ const platform = getPlatformInfo();
     return () => {
       window.removeEventListener("popstate", syncFromUrl);
     };
- }, []);
+ }, [isExtendedPage, isVideoXPlayerPage]);
 
   const sectionTitle =
     activeTab === "favorites"
@@ -320,6 +332,14 @@ const platform = getPlatformInfo();
 
   const tvSelectedClass =
     "ring-4 ring-white scale-[1.04] bg-white/10 shadow-[0_0_35px_rgba(255,255,255,0.35)]";
+
+  if (isExtendedPage) {
+  return <Extended />;
+}
+
+if (isVideoXPlayerPage) {
+  return <VideoXPlayer />;
+}
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#050505] pb-20 text-white">
@@ -348,6 +368,7 @@ const platform = getPlatformInfo();
                 Android
               </a>
 
+     
             </div>
 
             <div className="w-full md:w-[340px]">

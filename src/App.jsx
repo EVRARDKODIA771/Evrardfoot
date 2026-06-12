@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ChannelCard from "./components/ChannelCard";
 import VideoPlayer from "./components/VideoPlayer";
-import Extended from "./components/extended.jsx";
-import VideoXPlayer from "./components/VideoXPlayer";
 import { channels } from "./data/channels";
 
 const PC_DOWNLOAD_URL =
@@ -57,16 +55,7 @@ function getPlatformInfo() {
 
 export default function App() {
 const platform = getPlatformInfo();
-const pathname = window.location.pathname;
 
-const params = new URLSearchParams(
-  window.location.search
-);
-
-const isExtendedPage = pathname === "/extended";
-
-const isVideoXPlayerPage =
-  params.get("player") === "1";
 
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);
@@ -202,7 +191,7 @@ const isVideoXPlayerPage =
   useEffect(() => {
     if (!platform.isTV) return;
   if (selectedChannel) return;
-if (isExtendedPage || isVideoXPlayerPage) return;
+
 
     const handleKeyDown = (e) => {
       const key = e.key;
@@ -289,12 +278,9 @@ if (isExtendedPage || isVideoXPlayerPage) return;
   tvItems,
   focusedIndex,
   selectedChannel,
-  isExtendedPage,
-  isVideoXPlayerPage,
 ]);
 
   useEffect(() => {
-if (isExtendedPage || isVideoXPlayerPage) return;
 
     const syncFromUrl = () => {
       const params = new URLSearchParams(window.location.search);
@@ -316,7 +302,7 @@ if (isExtendedPage || isVideoXPlayerPage) return;
     return () => {
       window.removeEventListener("popstate", syncFromUrl);
     };
- }, [isExtendedPage, isVideoXPlayerPage]);
+ }, []);
 
   const sectionTitle =
     activeTab === "favorites"
@@ -334,14 +320,6 @@ if (isExtendedPage || isVideoXPlayerPage) return;
 
   const tvSelectedClass =
     "ring-4 ring-white scale-[1.04] bg-white/10 shadow-[0_0_35px_rgba(255,255,255,0.35)]";
-
-  if (isExtendedPage) {
-  return <Extended />;
-}
-
-if (isVideoXPlayerPage) {
-  return <VideoXPlayer />;
-}
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#050505] pb-20 text-white">
@@ -370,12 +348,6 @@ if (isVideoXPlayerPage) {
                 Android
               </a>
 
-              <a
-                href="/extended"
-                className="rounded-xl bg-zinc-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-zinc-600"
-              >
-                Étendre le contenu
-              </a>
             </div>
 
             <div className="w-full md:w-[340px]">

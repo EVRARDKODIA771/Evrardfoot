@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import ChannelCard from "./components/ChannelCard";
 import VideoPlayer from "./components/VideoPlayer";
+import Extended from "./components/extended";
+import VideoXPlayer from "./components/videoXplayer";
 import { channels } from "./data/channels";
-import ChannelCard from "./components/ChannelCard";
-import VideoPlayer from "./components/VideoPlayer";
 
 const PC_DOWNLOAD_URL =
   "https://github.com/EVRARDKODIA771/Evrardfoot/releases/download/PC/EvrardFoot_PC.rar";
@@ -56,17 +56,12 @@ function getPlatformInfo() {
 }
 
 export default function App() {
-const platform = getPlatformInfo();
-const pathname = window.location.pathname;
+  const platform = getPlatformInfo();
+  const pathname = window.location.pathname;
+  const params = new URLSearchParams(window.location.search);
 
-const params = new URLSearchParams(
-  window.location.search
-);
-
-const isExtendedPage = pathname === "/extended";
-
-const isVideoXPlayerPage =
-  params.get("player") === "1";
+  const isExtendedPage = pathname === "/extended";
+  const isVideoXPlayerPage = params.get("player") === "1";
 
   const [search, setSearch] = useState("");
   const [selectedChannel, setSelectedChannel] = useState(null);
@@ -201,8 +196,8 @@ const isVideoXPlayerPage =
 
   useEffect(() => {
     if (!platform.isTV) return;
-  if (selectedChannel) return;
-if (isExtendedPage || isVideoXPlayerPage) return;
+    if (selectedChannel) return;
+    if (isExtendedPage || isVideoXPlayerPage) return;
 
     const handleKeyDown = (e) => {
       const key = e.key;
@@ -285,16 +280,16 @@ if (isExtendedPage || isVideoXPlayerPage) return;
       window.removeEventListener("keydown", handleKeyDown, true);
     };
   }, [
-  platform.isTV,
-  tvItems,
-  focusedIndex,
-  selectedChannel,
-  isExtendedPage,
-  isVideoXPlayerPage,
-]);
+    platform.isTV,
+    tvItems,
+    focusedIndex,
+    selectedChannel,
+    isExtendedPage,
+    isVideoXPlayerPage,
+  ]);
 
   useEffect(() => {
-if (isExtendedPage || isVideoXPlayerPage) return;
+    if (isExtendedPage || isVideoXPlayerPage) return;
 
     const syncFromUrl = () => {
       const params = new URLSearchParams(window.location.search);
@@ -316,7 +311,7 @@ if (isExtendedPage || isVideoXPlayerPage) return;
     return () => {
       window.removeEventListener("popstate", syncFromUrl);
     };
- }, [isExtendedPage, isVideoXPlayerPage]);
+  }, [isExtendedPage, isVideoXPlayerPage]);
 
   const sectionTitle =
     activeTab === "favorites"
@@ -336,12 +331,12 @@ if (isExtendedPage || isVideoXPlayerPage) return;
     "ring-4 ring-white scale-[1.04] bg-white/10 shadow-[0_0_35px_rgba(255,255,255,0.35)]";
 
   if (isExtendedPage) {
-  return <Extended />;
-}
+    return <Extended />;
+  }
 
-if (isVideoXPlayerPage) {
-  return <VideoXPlayer />;
-}
+  if (isVideoXPlayerPage) {
+    return <VideoXPlayer />;
+  }
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#050505] pb-20 text-white">
@@ -368,13 +363,6 @@ if (isVideoXPlayerPage) {
                 className="rounded-xl bg-zinc-800 px-3 py-2 text-xs font-bold text-white transition hover:bg-zinc-700"
               >
                 Android
-              </a>
-
-              <a
-                href="/extended"
-                className="rounded-xl bg-zinc-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-zinc-600"
-              >
-                Étendre le contenu
               </a>
             </div>
 
@@ -405,9 +393,7 @@ if (isVideoXPlayerPage) {
                 setSearch("");
               }}
               className={`rounded-xl px-3 py-3 text-sm font-bold transition ${
-                activeTab === "home"
-                  ? "bg-white text-black"
-                  : "text-zinc-300"
+                activeTab === "home" ? "bg-white text-black" : "text-zinc-300"
               } ${focusedIndex === 0 ? tvSelectedClass : ""}`}
             >
               Accueil
@@ -417,9 +403,7 @@ if (isVideoXPlayerPage) {
               data-tv-index="1"
               onClick={() => setActiveTab("search")}
               className={`rounded-xl px-3 py-3 text-sm font-bold transition ${
-                activeTab === "search"
-                  ? "bg-white text-black"
-                  : "text-zinc-300"
+                activeTab === "search" ? "bg-white text-black" : "text-zinc-300"
               } ${focusedIndex === 1 ? tvSelectedClass : ""}`}
             >
               Recherche

@@ -42,14 +42,7 @@ function openChannel(channel) {
   const url =
     `http://rbvbi.candymarta.com/live/9SF5YVV/RXXPJ9E/${channel.stream_id}.m3u8`;
 
-  window.parent.postMessage(
-    {
-      type: "OPEN_VIDEO",
-      url: url,
-      stream_id: channel.stream_id
-    },
-    "*"
-  );
+  window.open(url, "_self");
 }
 
   const filteredChannels = channels

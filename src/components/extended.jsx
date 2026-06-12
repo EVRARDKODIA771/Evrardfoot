@@ -42,8 +42,16 @@ function openChannel(channel) {
 
   console.log("OPEN CHANNEL:", channel);
 
-  window.location.href =
-    `/api/iptv/play?stream_id=${channel.stream_id}`;
+  window.parent.postMessage(
+    {
+      type: "OPEN_VIDEO",
+      stream_id: channel.stream_id,
+      url:
+        `http://rbvbi.candymarta.com/live/9SF5YVV/RXXPJ9E/${channel.stream_id}.m3u8`
+    },
+    "*"
+  );
+
 }
 
   const filteredChannels = channels

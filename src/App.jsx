@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import ChannelCard from "./components/ChannelCard";
 import VideoPlayer from "./components/VideoPlayer";
 import { channels } from "./data/channels";
+import ChannelCard from "./components/ChannelCard";
+import VideoPlayer from "./components/VideoPlayer";
 
 const PC_DOWNLOAD_URL =
   "https://github.com/EVRARDKODIA771/Evrardfoot/releases/download/PC/EvrardFoot_PC.rar";

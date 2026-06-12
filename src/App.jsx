@@ -368,7 +368,12 @@ if (isVideoXPlayerPage) {
                 Android
               </a>
 
-     
+              <a
+                href="/extended"
+                className="rounded-xl bg-zinc-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-zinc-600"
+              >
+                Étendre le contenu
+              </a>
             </div>
 
             <div className="w-full md:w-[340px]">

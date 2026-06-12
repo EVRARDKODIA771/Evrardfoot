@@ -39,6 +39,7 @@ const [password, setPassword] = useState("");
   }
 
 function openChannel(channel) {
+   alert("CLICK OK");
   const url =
     `http://rbvbi.candymarta.com/live/9SF5YVV/RXXPJ9E/${channel.stream_id}.m3u8`;
 

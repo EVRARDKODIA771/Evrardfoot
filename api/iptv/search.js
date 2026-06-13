@@ -2,17 +2,8 @@ const IPTV_DNS = process.env.IPTV_DNS;
 const IPTV_USERNAME = process.env.IPTV_USERNAME;
 const IPTV_PASSWORD = process.env.IPTV_PASSWORD;
 
-const FR_MOVIE_CATEGORIES = [
-  "390","1473","432","440","485","477","479","854",
-  "847","842","855","843","853","850","1281","867",
-  "856","868","858","866","860","585","848","862",
-  "852","859","833","834"
-];
-
-const FR_SERIES_CATEGORIES = [
-  "654","659","666","445","1337","1338",
-  "1379","660","656","665","664","1386"
-];
+const MOVIE_CATEGORY = "390";
+const SERIES_CATEGORY = "654";
 
 export default async function handler(req, res) {
 
@@ -20,8 +11,8 @@ export default async function handler(req, res) {
 
     const q =
       String(req.query.q || "")
-        .toLowerCase()
-        .trim();
+        .trim()
+        .toLowerCase();
 
     if (!q) {
       return res.status(200).json({
@@ -33,45 +24,36 @@ export default async function handler(req, res) {
     const base =
       IPTV_DNS.replace(/\/+$/, "");
 
-    //
-    // FILMS
-    //
-    const vodUrl =
+    const moviesUrl =
       `${base}/player_api.php` +
       `?username=${IPTV_USERNAME}` +
       `&password=${IPTV_PASSWORD}` +
-      `&action=get_vod_streams`;
+      `&action=get_vod_streams` +
+      `&category_id=${MOVIE_CATEGORY}`;
 
-    //
-    // SERIES
-    //
     const seriesUrl =
       `${base}/player_api.php` +
       `?username=${IPTV_USERNAME}` +
       `&password=${IPTV_PASSWORD}` +
-      `&action=get_series`;
+      `&action=get_series` +
+      `&category_id=${SERIES_CATEGORY}`;
 
     const [
-      vodResponse,
+      moviesResponse,
       seriesResponse
     ] = await Promise.all([
-      fetch(vodUrl),
+      fetch(moviesUrl),
       fetch(seriesUrl)
     ]);
 
-    const vodData =
-      await vodResponse.json();
+    const moviesData =
+      await moviesResponse.json();
 
     const seriesData =
       await seriesResponse.json();
 
     const movies =
-      vodData
-        .filter(movie =>
-          FR_MOVIE_CATEGORIES.includes(
-            String(movie.category_id)
-          )
-        )
+      moviesData
         .filter(movie =>
           String(movie.name || "")
             .toLowerCase()
@@ -79,20 +61,10 @@ export default async function handler(req, res) {
         )
         .slice(0, 100)
         .map(movie => ({
-
           type: "movie",
-
           name: movie.name,
-
-          stream_id:
-            movie.stream_id,
-
-          category_id:
-            movie.category_id,
-
-          logo:
-            movie.stream_icon,
-
+          stream_id: movie.stream_id,
+          logo: movie.stream_icon,
           container_extension:
             movie.container_extension,
 
@@ -102,16 +74,10 @@ export default async function handler(req, res) {
             `${IPTV_PASSWORD}/` +
             `${movie.stream_id}.` +
             `${movie.container_extension}`
-
         }));
 
     const series =
       seriesData
-        .filter(serie =>
-          FR_SERIES_CATEGORIES.includes(
-            String(serie.category_id)
-          )
-        )
         .filter(serie =>
           String(serie.name || "")
             .toLowerCase()
@@ -119,35 +85,15 @@ export default async function handler(req, res) {
         )
         .slice(0, 100)
         .map(serie => ({
-
           type: "series",
-
           name: serie.name,
-
-          series_id:
-            serie.series_id,
-
-          category_id:
-            serie.category_id,
-
-          logo:
-            serie.cover ||
-
-            serie.stream_icon ||
-
-            "",
-
-          seasons:
-            serie.seasons || []
-
+          series_id: serie.series_id,
+          logo: serie.cover
         }));
 
     return res.status(200).json({
 
-      query: q,
-
       movies,
-
       series,
 
       total:
@@ -161,13 +107,7 @@ export default async function handler(req, res) {
     console.error(error);
 
     return res.status(500).json({
-
-      error:
-        "Erreur recherche",
-
-      details:
-        error.message
-
+      error: error.message
     });
 
   }

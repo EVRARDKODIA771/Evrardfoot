@@ -33,7 +33,7 @@ export default function SerieFilms() {
     try {
       setLoading(true);
 
-      const response = await fetch("/api/iptv/serieFilms");
+const response = await fetch("/api/iptv/serieFilms?limit=15");
       const data = await response.json();
 
       const loadedMovies = data.movies || [];

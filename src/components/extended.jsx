@@ -170,7 +170,7 @@ if (!authenticated) {
       <header className="header">
 
         <div className="logo">
-          IPTV FRANCE
+          SGJ Foot
         </div>
 
       </header>
@@ -240,121 +240,284 @@ if (!authenticated) {
 
       <style>{`
 
-      .page{
-        min-height:100vh;
-        background:#0d0d0d;
-        color:white;
-      }
+.page{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at top right,
+      rgba(0,102,255,.25),
+      transparent 35%),
+    radial-gradient(circle at top left,
+      rgba(0,50,150,.20),
+      transparent 30%),
+    #04070d;
 
-      .header{
-        height:65px;
-        display:flex;
-        align-items:center;
-        padding:0 25px;
-        background:#111;
-        border-bottom:1px solid #202020;
-      }
+  color:white;
+  overflow-x:hidden;
+}
 
-      .logo{
-        font-size:16px;
-        font-weight:700;
-        letter-spacing:1px;
-      }
+.header{
+  position:sticky;
+  top:0;
+  z-index:100;
 
-      .content{
-        padding:25px;
-      }
+  height:80px;
 
-      .searchContainer{
-        margin-bottom:20px;
-      }
+  display:flex;
+  align-items:center;
 
-      .searchInput{
-        width:100%;
-        max-width:500px;
-        height:46px;
-        background:#171717;
-        border:1px solid #2c2c2c;
-        border-radius:12px;
-        padding:0 15px;
-        color:white;
-        font-size:14px;
-        outline:none;
-        transition:.2s;
-      }
+  padding:0 35px;
 
-      .searchInput:focus{
-        border-color:#666;
-      }
+  backdrop-filter:blur(20px);
 
-      .searchInput::placeholder{
-        color:#888;
-      }
+  background:
+    rgba(4,7,13,.75);
 
-      .section h2{
-        font-size:15px;
-        font-weight:500;
-        margin-bottom:20px;
-        color:#e8e8e8;
-      }
+  border-bottom:
+    1px solid rgba(255,255,255,.08);
+}
 
-      .grid{
-        display:grid;
-        grid-template-columns:
-          repeat(auto-fill,minmax(220px,1fr));
-        gap:18px;
-      }
+.logo{
+  font-size:24px;
+  font-weight:900;
 
-      .card{
-        background:#171717;
-        border:1px solid #232323;
-        border-radius:14px;
-        overflow:hidden;
-        cursor:pointer;
-        transition:all .25s ease;
-      }
+  letter-spacing:2px;
 
-      .card:hover{
-        transform:translateY(-4px);
-        border-color:#666;
-      }
+  background:
+    linear-gradient(
+      90deg,
+      #ffffff,
+      #69a7ff,
+      #ffffff
+    );
 
-      .logoBox{
-        height:130px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        background:#111;
-      }
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
 
-      .logoBox img{
-        max-width:85%;
-        max-height:85%;
-        object-fit:contain;
-      }
+.content{
+  padding:35px;
+}
 
-      .fallback{
-        width:80px;
-        height:50px;
-        background:#2a2a2a;
-        border-radius:8px;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-      }
+.searchContainer{
+  margin-bottom:30px;
+}
 
-      .name{
-        padding:14px;
-        font-size:13px;
-        color:#f1f1f1;
-      }
+.searchInput{
+  width:100%;
+  max-width:650px;
 
-      .loading{
-        padding:40px;
-        color:#aaa;
-      }
+  height:58px;
 
-      `}</style>
+  padding:0 20px;
+
+  font-size:15px;
+
+  border:none;
+
+  border-radius:18px;
+
+  color:white;
+
+  background:
+    rgba(15,20,35,.85);
+
+  backdrop-filter:blur(12px);
+
+  box-shadow:
+    0 0 0 1px rgba(0,120,255,.15),
+    0 0 25px rgba(0,120,255,.15);
+
+  transition:.3s;
+}
+
+.searchInput:focus{
+  outline:none;
+
+  transform:translateY(-1px);
+
+  box-shadow:
+    0 0 0 1px #2b8fff,
+    0 0 40px rgba(43,143,255,.5);
+}
+
+.searchInput::placeholder{
+  color:#7e97be;
+}
+
+.section h2{
+  font-size:24px;
+  font-weight:700;
+  margin-bottom:25px;
+  color:white;
+}
+
+.grid{
+  display:grid;
+
+  grid-template-columns:
+    repeat(auto-fill,minmax(240px,1fr));
+
+  gap:24px;
+}
+
+.card{
+  position:relative;
+
+  overflow:hidden;
+
+  border-radius:24px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(15,22,40,.95),
+      rgba(6,10,18,.95)
+    );
+
+  border:
+    1px solid rgba(60,130,255,.18);
+
+  cursor:pointer;
+
+  transition:.35s;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,.45);
+}
+
+.card::before{
+  content:"";
+
+  position:absolute;
+
+  inset:-100%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(0,120,255,.25),
+      transparent 60%
+    );
+
+  opacity:0;
+
+  transition:.4s;
+}
+
+.card:hover{
+  transform:
+    translateY(-10px)
+    scale(1.03);
+
+  border-color:#3b93ff;
+
+  box-shadow:
+    0 0 25px rgba(0,120,255,.25),
+    0 0 70px rgba(0,120,255,.15);
+}
+
+.card:hover::before{
+  opacity:1;
+}
+
+.logoBox{
+  height:180px;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0,60,180,.18),
+      rgba(0,0,0,0)
+    );
+}
+
+.logoBox img{
+  max-width:88%;
+  max-height:88%;
+
+  object-fit:contain;
+
+  transition:.35s;
+}
+
+.card:hover img{
+  transform:scale(1.08);
+}
+
+.fallback{
+  width:120px;
+  height:70px;
+
+  border-radius:16px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-weight:700;
+
+  background:
+    linear-gradient(
+      135deg,
+      #0048d0,
+      #0d7dff
+    );
+
+  box-shadow:
+    0 0 25px rgba(0,120,255,.45);
+}
+
+.name{
+  padding:18px;
+
+  text-align:center;
+
+  font-size:15px;
+
+  font-weight:600;
+
+  color:#eef5ff;
+}
+
+.loading{
+  text-align:center;
+
+  padding:80px;
+
+  font-size:18px;
+
+  color:#7ea9ea;
+}
+
+@media(max-width:768px){
+
+  .content{
+    padding:20px;
+  }
+
+  .header{
+    padding:0 20px;
+  }
+
+  .logo{
+    font-size:18px;
+  }
+
+  .grid{
+    grid-template-columns:
+      repeat(auto-fill,minmax(160px,1fr));
+  }
+
+  .logoBox{
+    height:130px;
+  }
+}
+
+`}</style>
 
     </div>
   );

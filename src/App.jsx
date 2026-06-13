@@ -4,6 +4,7 @@ import VideoPlayer from "./components/VideoPlayer";
 import Extended from "./components/extended";
 import VideoXPlayer from "./components/VideoXPlayer";
 import { channels } from "./data/channels";
+import SerieFilms from "./components/serieFilms";
 
 const PC_DOWNLOAD_URL =
   "https://github.com/EVRARDKODIA771/Evrardfoot/releases/download/PC/EvrardFoot_PC.rar";
@@ -61,6 +62,7 @@ export default function App() {
   const params = new URLSearchParams(window.location.search);
 
   const isExtendedPage = pathname === "/extended";
+const isSerieFilmsPage = pathname === "/serieFilms";
   const isVideoXPlayerPage = params.get("player") === "1";
 
   const [search, setSearch] = useState("");
@@ -329,6 +331,9 @@ export default function App() {
 
   const tvSelectedClass =
     "ring-4 ring-white scale-[1.04] bg-white/10 shadow-[0_0_35px_rgba(255,255,255,0.35)]";
+if (isSerieFilmsPage) {
+  return <SerieFilms />;
+}
 
   if (isExtendedPage) {
     return <Extended />;

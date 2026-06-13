@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   try {
     const base = IPTV_DNS.replace(/\/+$/, "");
 
-    const limit = Number(req.query.limit || 30);
+    const limit = Number(req.query.limit || 15);
 
     const vodUrl =
       `${base}/player_api.php` +

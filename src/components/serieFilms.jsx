@@ -29,6 +29,48 @@ export default function SerieFilms() {
     }
   }, [authenticated]);
 
+useEffect(() => {
+
+  if (!authenticated) return;
+
+  const timer = setTimeout(async () => {
+
+    try {
+
+      if (!search.trim()) {
+
+        loadContent();
+        return;
+
+      }
+
+      setLoading(true);
+
+      const response = await fetch(
+        `/api/iptv/search?q=${encodeURIComponent(search)}`
+      );
+
+      const data = await response.json();
+
+      setMovies(data.movies || []);
+      setSeries(data.series || []);
+
+    } catch (error) {
+
+      console.error(error);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  }, 500);
+
+  return () => clearTimeout(timer);
+
+}, [search]);
+
   async function loadContent() {
     try {
       setLoading(true);
@@ -109,22 +151,6 @@ const response = await fetch("/api/iptv/serieFilms?limit=15");
 
     window.open(url, "_self");
   }
-
-  const filteredMovies = useMemo(() => {
-    const q = search.toLowerCase().trim();
-
-    return movies.filter((movie) =>
-      movie.name?.toLowerCase().includes(q)
-    );
-  }, [movies, search]);
-
-  const filteredSeries = useMemo(() => {
-    const q = search.toLowerCase().trim();
-
-    return series.filter((serie) =>
-      serie.name?.toLowerCase().includes(q)
-    );
-  }, [series, search]);
 
   const heroImage =
     featured?.logo ||
@@ -280,8 +306,8 @@ const response = await fetch("/api/iptv/serieFilms?limit=15");
           <main className="content">
             {(activeTab === "all" || activeTab === "movies") && (
               <Row
-                title={`🎬 Films français (${filteredMovies.length})`}
-                items={filteredMovies}
+                title={`🎬 Films français (${movies.length})`}
+                items={movies}
                 type="movie"
                 cleanTitle={cleanTitle}
                 onMovie={openMovie}
@@ -291,8 +317,8 @@ const response = await fetch("/api/iptv/serieFilms?limit=15");
 
             {(activeTab === "all" || activeTab === "series") && (
               <Row
-                title={`📺 Séries françaises (${filteredSeries.length})`}
-                items={filteredSeries}
+                title={`📺 Séries françaises (${series.length})`}
+                items={series}
                 type="series"
                 cleanTitle={cleanTitle}
                 onMovie={openMovie}

@@ -10,7 +10,8 @@ const url =
   `${IPTV_DNS}/player_api.php` +
   `?username=${IPTV_USERNAME}` +
   `&password=${IPTV_PASSWORD}` +
-  `&action=get_series`;
+  `&action=get_series_info` +
+  `&series_id=53487`;
 
   const response = await fetch(url);
 

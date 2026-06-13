@@ -6,11 +6,11 @@ const IPTV_PASSWORD = process.env.IPTV_PASSWORD;
 
 export default async function handler(req, res) {
 
-  const url =
-    `${IPTV_DNS}/player_api.php` +
-    `?username=${IPTV_USERNAME}` +
-    `&password=${IPTV_PASSWORD}` +
-    `&action=get_series`;
+const url =
+  `${IPTV_DNS}/player_api.php` +
+  `?username=${IPTV_USERNAME}` +
+  `&password=${IPTV_PASSWORD}` +
+  `&action=get_series`;
 
   const response = await fetch(url);
 

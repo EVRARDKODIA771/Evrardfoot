@@ -19,23 +19,40 @@ export default async function handler(req, res) {
     const host =
       req.headers.host;
 
-    const catalogUrl =
-      `${protocol}://${host}/catalog.json`;
+    const moviesUrl =
+      `${protocol}://${host}/catalogFilms.json`;
 
-    const catalogResponse =
-      await fetch(catalogUrl);
+    const seriesUrl =
+      `${protocol}://${host}/catalogSeries.json`;
 
-    if (!catalogResponse.ok) {
+    const [
+      moviesResponse,
+      seriesResponse
+    ] = await Promise.all([
+      fetch(moviesUrl),
+      fetch(seriesUrl)
+    ]);
+
+    if (!moviesResponse.ok) {
       throw new Error(
-        "Impossible de charger catalog.json"
+        "Impossible de charger catalogFilms.json"
       );
     }
 
-    const catalog =
-      await catalogResponse.json();
+    if (!seriesResponse.ok) {
+      throw new Error(
+        "Impossible de charger catalogSeries.json"
+      );
+    }
+
+    const moviesCatalog =
+      await moviesResponse.json();
+
+    const seriesCatalog =
+      await seriesResponse.json();
 
     const movies =
-      (catalog.movies || [])
+      (moviesCatalog.movies || [])
         .filter(movie =>
           String(movie.name || "")
             .toLowerCase()
@@ -44,7 +61,7 @@ export default async function handler(req, res) {
         .slice(0, 100);
 
     const series =
-      (catalog.series || [])
+      (seriesCatalog.series || [])
         .filter(serie =>
           String(serie.name || "")
             .toLowerCase()

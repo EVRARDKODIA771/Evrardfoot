@@ -473,7 +473,53 @@ function Row({
 }
 
 const styles = `
+.loading-logo{
+  font-size:48px;
+  font-weight:1000;
+  margin-bottom:30px;
+}
 
+.loading-logo span{
+  color:#4fa3ff;
+}
+
+.loading-spinner{
+  width:70px;
+  height:70px;
+  border:5px solid rgba(255,255,255,.12);
+  border-top:5px solid #4fa3ff;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+
+.loading-text{
+  margin-top:25px;
+  color:#9fc8ff;
+  font-size:18px;
+  font-weight:800;
+}
+
+@keyframes spin{
+  from{
+    transform:rotate(0deg);
+  }
+  to{
+    transform:rotate(360deg);
+  }
+}
+
+.main-loading{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  background:
+    radial-gradient(circle at center,
+      rgba(0,120,255,.15),
+      transparent 50%),
+    #05070c;
+}
 *{
   box-sizing:border-box;
 }

@@ -179,15 +179,6 @@ export default function VideoPlayer({ channel, onClose }) {
     return () => clearTimeout(timer);
   }, [safeUrl]);
 
-  useEffect(() => {
-    if (!showControls) return;
-
-    const timer = setTimeout(() => {
-      setShowControls(false);
-    }, 3500);
-
-    return () => clearTimeout(timer);
-  }, [showControls]);
 
   useEffect(() => {
     if (!channel) return;

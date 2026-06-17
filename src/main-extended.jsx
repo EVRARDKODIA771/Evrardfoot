@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import Extended from "./components/extended";
+import Extended from "./components/serieFilms";
 
 ReactDOM.createRoot(
   document.getElementById("root")

@@ -58,12 +58,14 @@ function getPlatformInfo() {
 
 
 export default function App() {
-
-  const platform = getPlatformInfo();
  const pathname = window.location.pathname;
-  if (pathname === "/serieFilms") {
+   if (pathname === "/serieFilms") {
     return <SerieFilms />;
   }
+  if (pathname === "/extended") {
+    return <Extended />;
+  }
+  const platform = getPlatformInfo();
   const params = new URLSearchParams(window.location.search);
   const isExtendedPage = pathname === "/extended";
 const isSerieFilmsPage = pathname === "/serieFilms";

@@ -56,11 +56,15 @@ function getPlatformInfo() {
   };
 }
 
-export default function App() {
-  const platform = getPlatformInfo();
-  const pathname = window.location.pathname;
-  const params = new URLSearchParams(window.location.search);
 
+export default function App() {
+
+  const platform = getPlatformInfo();
+ const pathname = window.location.pathname;
+  if (pathname === "/serieFilms") {
+    return <SerieFilms />;
+  }
+  const params = new URLSearchParams(window.location.search);
   const isExtendedPage = pathname === "/extended";
 const isSerieFilmsPage = pathname === "/serieFilms";
   const isVideoXPlayerPage = params.get("player") === "1";
@@ -331,9 +335,6 @@ const isSerieFilmsPage = pathname === "/serieFilms";
 
   const tvSelectedClass =
     "ring-4 ring-white scale-[1.04] bg-white/10 shadow-[0_0_35px_rgba(255,255,255,0.35)]";
-if (isSerieFilmsPage) {
-  return <SerieFilms />;
-}
 
   if (isExtendedPage) {
     return <Extended />;

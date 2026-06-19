@@ -395,18 +395,15 @@ export default function VideoPlayer({ channel, onClose }) {
               {!frameError && safeUrl && (
                 <iframe
                   key={`${reader}-${safeUrl}`}
-                  tabIndex={-1}
-                  srcDoc={sandboxHtml}
-                  title={channel.name}
-                  className="h-full w-full border-0 bg-black"
-                  style={{
-                    pointerEvents: "auto",
-                  }}
-                  loading="eager"
-                  allowFullScreen
-                  referrerPolicy="no-referrer"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+  tabIndex={-1}
+  srcDoc={sandboxHtml}
+  title={channel.name}
+  className="h-full w-full border-0 bg-black"
+  loading="eager"
+  allowFullScreen
+  referrerPolicy="no-referrer"
+  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                   onLoad={() => {
                     setIsLoading(false);
 

@@ -70,79 +70,7 @@ export default function VideoPlayer({ channel, onClose }) {
     }
   }, [channel, reader]);
 
-  const sandboxHtml = useMemo(() => {
-    if (!safeUrl) return "";
-
-    const escapedUrl = escapeHtml(safeUrl);
-
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
-
-  <style>
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: black;
-    }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background: black;
-      display: block;
-    }
-  </style>
-</head>
-
-<body>
-  <iframe
-    src="${escapedUrl}"
-    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-    allowfullscreen
-    referrerpolicy="no-referrer"
-  ></iframe>
-
-  <script>
-    window.open = function () {
-      return null;
-    };
-
-    document.addEventListener(
-      "click",
-      function (e) {
-        var target = e.target;
-
-        var link =
-          target && target.closest
-            ? target.closest("a")
-            : null;
-
-        if (link && link.target === "_blank") {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }
-      },
-      true
-    );
-  </script>
-</body>
-</html>
-`;
-  }, [safeUrl]);
-
+ 
   useEffect(() => {
     if (!channel) return;
 
@@ -392,32 +320,30 @@ export default function VideoPlayer({ channel, onClose }) {
         >
           <div className="absolute inset-0 p-2 md:p-4">
             <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-black">
-              {!frameError && safeUrl && (
-                <iframe
-                  key={`${reader}-${safeUrl}`}
-  tabIndex={-1}
-  srcDoc={sandboxHtml}
-  title={channel.name}
-  className="h-full w-full border-0 bg-black"
-  loading="eager"
-  allowFullScreen
-  referrerPolicy="no-referrer"
-  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
-  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                  onLoad={() => {
-                    setIsLoading(false);
+             {!frameError && safeUrl && (
+  <iframe
+    key={`${reader}-${safeUrl}`}
+    tabIndex={-1}
+    src={safeUrl}
+    title={channel.name}
+    className="h-full w-full border-0 bg-black"
+    loading="eager"
+    allowFullScreen
+    referrerPolicy="no-referrer"
+    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+    onLoad={() => {
+      setIsLoading(false);
 
-                    playerRootRef.current?.focus({
-                      preventScroll: true,
-                    });
-                  }}
-                  onError={() => {
-                    setFrameError(true);
-                    setIsLoading(false);
-                  }}
-                />
-              )}
-
+      playerRootRef.current?.focus({
+        preventScroll: true,
+      });
+    }}
+    onError={() => {
+      setFrameError(true);
+      setIsLoading(false);
+    }}
+  />
+)}
               {isLoading && !frameError && safeUrl && (
                 <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/80">
                   <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />

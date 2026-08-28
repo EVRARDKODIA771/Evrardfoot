@@ -36,8 +36,8 @@ export default function VideoPlayer({ channel, onClose }) {
   const [reader, setReader] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [frameError, setFrameError] = useState(false);
-  const [openingBrowser, setOpeningBrowser] = useState(false);
-  const [browserError, setBrowserError] = useState("");
+  const [openingPlayer, setOpeningPlayer] = useState(false);
+  const [playerError, setPlayerError] = useState("");
   const [isNativeApp, setIsNativeApp] = useState(false);
 
   const safeUrl = useMemo(() => {
@@ -51,6 +51,13 @@ export default function VideoPlayer({ channel, onClose }) {
     try {
       const url = new URL(rawUrl);
 
+      if (
+        url.protocol !== "https:" &&
+        url.protocol !== "http:"
+      ) {
+        return "";
+      }
+
       const blocked = BLOCKED_DOMAINS.some(
         (domain) =>
           url.hostname === domain ||
@@ -59,12 +66,9 @@ export default function VideoPlayer({ channel, onClose }) {
 
       if (blocked) return "";
 
-      if (url.protocol !== "https:" && url.protocol !== "http:") {
-        return "";
-      }
-
       return url.href;
-    } catch {
+    } catch (error) {
+      console.error("Adresse du lecteur invalide :", error);
       return "";
     }
   }, [channel, reader]);
@@ -88,14 +92,14 @@ export default function VideoPlayer({ channel, onClose }) {
     setReader(1);
     setIsLoading(true);
     setFrameError(false);
-    setOpeningBrowser(false);
-    setBrowserError("");
+    setOpeningPlayer(false);
+    setPlayerError("");
   }, [channel]);
 
   useEffect(() => {
     setIsLoading(true);
     setFrameError(false);
-    setBrowserError("");
+    setPlayerError("");
 
     if (!safeUrl || isNativeApp) {
       setIsLoading(false);
@@ -126,6 +130,8 @@ export default function VideoPlayer({ channel, onClose }) {
       if (!isBack) return;
 
       event.preventDefault();
+      event.stopPropagation();
+
       onClose();
     };
 
@@ -143,49 +149,36 @@ export default function VideoPlayer({ channel, onClose }) {
 
     setIsLoading(true);
     setFrameError(false);
-    setBrowserError("");
+    setOpeningPlayer(false);
+    setPlayerError("");
   };
 
-  const openNativePlayer = async () => {
-    if (!safeUrl || openingBrowser) return;
+  const openNativePlayer = () => {
+    if (!safeUrl || openingPlayer) return;
 
-    setOpeningBrowser(true);
-    setBrowserError("");
+    setOpeningPlayer(true);
+    setPlayerError("");
 
     try {
-      const browserPlugin =
-        window.Capacitor?.Plugins?.Browser;
+      const internalPlayerUrl =
+        `evrardfoot://player?url=${encodeURIComponent(safeUrl)}`;
 
-      if (browserPlugin?.open) {
-        await browserPlugin.open({
-          url: safeUrl,
-          presentationStyle: "fullscreen",
-          toolbarColor: "#000000",
-        });
+      window.location.href = internalPlayerUrl;
 
-        return;
-      }
-
-      const openedWindow = window.open(
-        safeUrl,
-        "_blank",
-        "noopener,noreferrer"
-      );
-
-      if (!openedWindow) {
-        window.location.href = safeUrl;
-      }
+      window.setTimeout(() => {
+        setOpeningPlayer(false);
+      }, 1000);
     } catch (error) {
       console.error(
-        "Impossible d’ouvrir le lecteur externe :",
+        "Impossible d’ouvrir le lecteur sécurisé :",
         error
       );
 
-      setBrowserError(
-        "Le lecteur n’a pas pu être ouvert. Réessaie ou utilise l’autre lecteur."
+      setPlayerError(
+        "Le lecteur sécurisé n’a pas pu être ouvert. Réessaie ou utilise l’autre lecteur."
       );
-    } finally {
-      setOpeningBrowser(false);
+
+      setOpeningPlayer(false);
     }
   };
 
@@ -243,14 +236,14 @@ export default function VideoPlayer({ channel, onClose }) {
                 </h3>
 
                 <p className="mt-3 max-w-md text-sm leading-6 text-zinc-400">
-                  Le lecteur va s’ouvrir dans une fenêtre vidéo
-                  compatible. Le bouton Retour te ramènera dans
-                  EvrardFoot.
+                  La vidéo va s’ouvrir dans le lecteur sécurisé
+                  d’EvrardFoot. Les fenêtres et les redirections
+                  publicitaires externes seront bloquées.
                 </p>
 
-                {browserError && (
+                {playerError && (
                   <p className="mt-4 max-w-md rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-                    {browserError}
+                    {playerError}
                   </p>
                 )}
 
@@ -262,10 +255,10 @@ export default function VideoPlayer({ channel, onClose }) {
                   <button
                     type="button"
                     onClick={openNativePlayer}
-                    disabled={openingBrowser}
+                    disabled={openingPlayer}
                     className="mt-6 rounded-xl bg-red-600 px-7 py-3 font-bold text-white transition hover:bg-red-500 disabled:cursor-wait disabled:opacity-60"
                   >
-                    {openingBrowser
+                    {openingPlayer
                       ? "Ouverture…"
                       : "Regarder maintenant"}
                   </button>
@@ -277,9 +270,18 @@ export default function VideoPlayer({ channel, onClose }) {
                     onClick={switchReader}
                     className="mt-3 rounded-xl bg-zinc-800 px-6 py-3 text-sm font-semibold hover:bg-zinc-700"
                   >
-                    Essayer le lecteur {reader === 1 ? "2" : "1"}
+                    Essayer le lecteur{" "}
+                    {reader === 1 ? "2" : "1"}
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="mt-3 rounded-xl border border-white/10 bg-transparent px-6 py-3 text-sm font-semibold text-zinc-300 hover:bg-white/5"
+                >
+                  Retour aux chaînes
+                </button>
               </div>
             ) : (
               <>
@@ -320,7 +322,8 @@ export default function VideoPlayer({ channel, onClose }) {
                     </p>
 
                     <p className="mt-2 max-w-md text-sm text-zinc-400">
-                      Ce lecteur est inaccessible ou temporairement bloqué.
+                      Ce lecteur est inaccessible ou temporairement
+                      bloqué.
                     </p>
 
                     <div className="mt-5 flex flex-wrap justify-center gap-3">

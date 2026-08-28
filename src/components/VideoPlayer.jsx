@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const BLOCKED_DOMAINS = [
   "doubleclick.net",
@@ -14,38 +14,31 @@ const BLOCKED_DOMAINS = [
   "outbrain.com",
 ];
 
-function escapeHtml(value) {
-  return String(value || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
+function isCapacitorNative() {
+  if (typeof window === "undefined") return false;
+
+  const capacitor = window.Capacitor;
+
+  if (!capacitor) return false;
+
+  if (typeof capacitor.isNativePlatform === "function") {
+    return capacitor.isNativePlatform();
+  }
+
+  if (typeof capacitor.getPlatform === "function") {
+    return capacitor.getPlatform() !== "web";
+  }
+
+  return Boolean(capacitor.isNative);
 }
 
 export default function VideoPlayer({ channel, onClose }) {
   const [reader, setReader] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [frameError, setFrameError] = useState(false);
-  const [showControls, setShowControls] = useState(true);
-
-  const [tvCursor, setTvCursor] = useState({
-    x: typeof window !== "undefined" ? window.innerWidth / 2 : 500,
-    y: typeof window !== "undefined" ? window.innerHeight / 2 : 300,
-  });
-
-  const playerRootRef = useRef(null);
-  const cursorRef = useRef(tvCursor);
-
-  const pressedRef = useRef({
-    up: false,
-    down: false,
-    left: false,
-    right: false,
-  });
-
-  useEffect(() => {
-    cursorRef.current = tvCursor;
-  }, [tvCursor]);
+  const [openingBrowser, setOpeningBrowser] = useState(false);
+  const [browserError, setBrowserError] = useState("");
+  const [isNativeApp, setIsNativeApp] = useState(false);
 
   const safeUrl = useMemo(() => {
     const rawUrl =
@@ -58,11 +51,17 @@ export default function VideoPlayer({ channel, onClose }) {
     try {
       const url = new URL(rawUrl);
 
-      const blocked = BLOCKED_DOMAINS.some((domain) =>
-        url.hostname.includes(domain)
+      const blocked = BLOCKED_DOMAINS.some(
+        (domain) =>
+          url.hostname === domain ||
+          url.hostname.endsWith(`.${domain}`)
       );
 
       if (blocked) return "";
+
+      if (url.protocol !== "https:" && url.protocol !== "http:") {
+        return "";
+      }
 
       return url.href;
     } catch {
@@ -70,14 +69,18 @@ export default function VideoPlayer({ channel, onClose }) {
     }
   }, [channel, reader]);
 
- 
   useEffect(() => {
-    if (!channel) return;
+    setIsNativeApp(isCapacitorNative());
+  }, []);
 
+  useEffect(() => {
+    if (!channel) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
     };
   }, [channel]);
 
@@ -85,198 +88,116 @@ export default function VideoPlayer({ channel, onClose }) {
     setReader(1);
     setIsLoading(true);
     setFrameError(false);
-    setShowControls(true);
-
-    const center = {
-      x: window.innerWidth / 2,
-      y: window.innerHeight / 2,
-    };
-
-    cursorRef.current = center;
-    setTvCursor(center);
+    setOpeningBrowser(false);
+    setBrowserError("");
   }, [channel]);
 
   useEffect(() => {
     setIsLoading(true);
     setFrameError(false);
+    setBrowserError("");
 
-    const timer = setTimeout(() => {
+    if (!safeUrl || isNativeApp) {
       setIsLoading(false);
-    }, 8000);
+      return undefined;
+    }
 
-    return () => clearTimeout(timer);
-  }, [safeUrl]);
-
-
-  useEffect(() => {
-    if (!channel) return;
-
-    const keepFocus = () => {
-      playerRootRef.current?.focus({
-        preventScroll: true,
-      });
-    };
-
-    keepFocus();
-
-    const interval = setInterval(keepFocus, 500);
+    const timer = window.setTimeout(() => {
+      setIsLoading(false);
+    }, 10000);
 
     return () => {
-      clearInterval(interval);
+      window.clearTimeout(timer);
     };
-  }, [channel]);
+  }, [safeUrl, isNativeApp]);
+
+  useEffect(() => {
+    if (!channel) return undefined;
+
+    const handleBack = (event) => {
+      const isBack =
+        event.key === "Escape" ||
+        event.key === "Backspace" ||
+        event.key === "BrowserBack" ||
+        event.key === "GoBack" ||
+        event.keyCode === 4 ||
+        event.keyCode === 461;
+
+      if (!isBack) return;
+
+      event.preventDefault();
+      onClose();
+    };
+
+    window.addEventListener("keydown", handleBack, true);
+
+    return () => {
+      window.removeEventListener("keydown", handleBack, true);
+    };
+  }, [channel, onClose]);
 
   const switchReader = () => {
-    setReader((prev) => (prev === 1 ? 2 : 1));
+    setReader((currentReader) =>
+      currentReader === 1 ? 2 : 1
+    );
 
     setIsLoading(true);
     setFrameError(false);
-    setShowControls(true);
-
-    playerRootRef.current?.focus({
-      preventScroll: true,
-    });
+    setBrowserError("");
   };
 
-  useEffect(() => {
-    if (!channel) return;
+  const openNativePlayer = async () => {
+    if (!safeUrl || openingBrowser) return;
 
-    let animationFrame;
-    let lastTime = performance.now();
+    setOpeningBrowser(true);
+    setBrowserError("");
 
-    const speed = 1200;
+    try {
+      const browserPlugin =
+        window.Capacitor?.Plugins?.Browser;
 
-    const stopDirections = () => {
-      pressedRef.current.up = false;
-      pressedRef.current.down = false;
-      pressedRef.current.left = false;
-      pressedRef.current.right = false;
-    };
-
-    const handleKeyDown = (e) => {
-      const key = e.key;
-
-      const isBack =
-        key === "Backspace" ||
-        key === "Escape" ||
-        key === "BrowserBack" ||
-        key === "GoBack" ||
-        e.keyCode === 4 ||
-        e.keyCode === 461;
-
-      const isArrow =
-        key === "ArrowUp" ||
-        key === "ArrowDown" ||
-        key === "ArrowLeft" ||
-        key === "ArrowRight";
-
-      if (!isBack && !isArrow) return;
-
-      setShowControls(true);
-
-      if (isBack) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        stopDirections();
-        onClose();
+      if (browserPlugin?.open) {
+        await browserPlugin.open({
+          url: safeUrl,
+          presentationStyle: "fullscreen",
+          toolbarColor: "#000000",
+        });
 
         return;
       }
 
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (key === "ArrowUp") pressedRef.current.up = true;
-      if (key === "ArrowDown") pressedRef.current.down = true;
-      if (key === "ArrowLeft") pressedRef.current.left = true;
-      if (key === "ArrowRight") pressedRef.current.right = true;
-    };
-
-    const handleKeyUp = (e) => {
-      const key = e.key;
-
-      if (key === "ArrowUp") pressedRef.current.up = false;
-      if (key === "ArrowDown") pressedRef.current.down = false;
-      if (key === "ArrowLeft") pressedRef.current.left = false;
-      if (key === "ArrowRight") pressedRef.current.right = false;
-    };
-
-    const animate = (time) => {
-      const delta = Math.min((time - lastTime) / 1000, 0.05);
-
-      lastTime = time;
-
-      const pressed = pressedRef.current;
-      const current = cursorRef.current;
-
-      let nextX = current.x;
-      let nextY = current.y;
-
-      const movement = speed * delta;
-
-      if (pressed.up) nextY -= movement;
-      if (pressed.down) nextY += movement;
-      if (pressed.left) nextX -= movement;
-      if (pressed.right) nextX += movement;
-
-      nextX = Math.max(12, Math.min(window.innerWidth - 12, nextX));
-      nextY = Math.max(12, Math.min(window.innerHeight - 12, nextY));
-
-      const next = {
-        x: nextX,
-        y: nextY,
-      };
-
-      cursorRef.current = next;
-      setTvCursor(next);
-
-      animationFrame = requestAnimationFrame(animate);
-    };
-
-    window.addEventListener("keydown", handleKeyDown, true);
-    window.addEventListener("keyup", handleKeyUp, true);
-
-    animationFrame = requestAnimationFrame(animate);
-
-    return () => {
-      stopDirections();
-
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown,
-        true
+      const openedWindow = window.open(
+        safeUrl,
+        "_blank",
+        "noopener,noreferrer"
       );
 
-      window.removeEventListener(
-        "keyup",
-        handleKeyUp,
-        true
+      if (!openedWindow) {
+        window.location.href = safeUrl;
+      }
+    } catch (error) {
+      console.error(
+        "Impossible d’ouvrir le lecteur externe :",
+        error
       );
 
-      cancelAnimationFrame(animationFrame);
-    };
-  }, [channel, onClose]);
+      setBrowserError(
+        "Le lecteur n’a pas pu être ouvert. Réessaie ou utilise l’autre lecteur."
+      );
+    } finally {
+      setOpeningBrowser(false);
+    }
+  };
 
   if (!channel) return null;
 
   return (
-    <div
-      ref={playerRootRef}
-      tabIndex={0}
-      className="fixed inset-0 z-50 bg-black outline-none"
-    >
-      <div className="flex h-screen w-screen flex-col bg-black text-white">
-        <div
-          className={`border-b border-white/10 bg-black/90 transition duration-300 ${
-            showControls
-              ? "opacity-100"
-              : "pointer-events-none opacity-0"
-          }`}
-        >
-          <div className="flex justify-between gap-3 px-4 py-4">
-            <div>
-              <h2 className="text-lg font-semibold">
+    <div className="fixed inset-0 z-50 bg-black text-white">
+      <div className="flex h-screen w-screen flex-col bg-black">
+        <header className="border-b border-white/10 bg-black/95">
+          <div className="flex items-center justify-between gap-3 px-4 py-4">
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-semibold">
                 {channel.name}
               </h2>
 
@@ -285,11 +206,12 @@ export default function VideoPlayer({ channel, onClose }) {
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex shrink-0 flex-wrap gap-2">
               {channel?.streamUrl2 && (
                 <button
+                  type="button"
                   onClick={switchReader}
-                  className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
+                  className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold hover:bg-zinc-700"
                 >
                   {reader === 1
                     ? "Lecteur 2"
@@ -298,108 +220,134 @@ export default function VideoPlayer({ channel, onClose }) {
               )}
 
               <button
+                type="button"
                 onClick={onClose}
-                className="rounded-lg bg-red-600 px-4 py-2 hover:bg-red-500"
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold hover:bg-red-500"
               >
                 Fermer
               </button>
             </div>
           </div>
-        </div>
+        </header>
 
-        <div
-          className="relative flex-1 bg-black"
-          onMouseMove={() => setShowControls(true)}
-          onClick={() => {
-            setShowControls(true);
-
-            playerRootRef.current?.focus({
-              preventScroll: true,
-            });
-          }}
-        >
-          <div className="absolute inset-0 p-2 md:p-4">
-            <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-black">
-             {!frameError && safeUrl && (
-  <iframe
-    key={`${reader}-${safeUrl}`}
-    tabIndex={-1}
-    src={safeUrl}
-    title={channel.name}
-    className="h-full w-full border-0 bg-black"
-    loading="eager"
-    allowFullScreen
-    referrerPolicy="no-referrer"
-    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-    onLoad={() => {
-      setIsLoading(false);
-
-      playerRootRef.current?.focus({
-        preventScroll: true,
-      });
-    }}
-    onError={() => {
-      setFrameError(true);
-      setIsLoading(false);
-    }}
-  />
-)}
-              {isLoading && !frameError && safeUrl && (
-                <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/80">
-                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
+        <main className="relative flex-1 bg-black p-2 md:p-4">
+          <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-black">
+            {isNativeApp ? (
+              <div className="flex h-full w-full flex-col items-center justify-center bg-black p-6 text-center">
+                <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-red-600 text-3xl">
+                  ▶
                 </div>
-              )}
 
-              {(frameError || !safeUrl) && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6 text-center">
-                  <p className="text-lg font-semibold">
-                    Lecture indisponible
+                <h3 className="text-xl font-bold">
+                  {channel.name}
+                </h3>
+
+                <p className="mt-3 max-w-md text-sm leading-6 text-zinc-400">
+                  Le lecteur va s’ouvrir dans une fenêtre vidéo
+                  compatible. Le bouton Retour te ramènera dans
+                  EvrardFoot.
+                </p>
+
+                {browserError && (
+                  <p className="mt-4 max-w-md rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                    {browserError}
                   </p>
+                )}
 
-                  <p className="mt-2 max-w-md text-sm text-zinc-400">
-                    Ce lecteur est inaccessible ou bloqué.
+                {!safeUrl ? (
+                  <p className="mt-5 text-sm text-red-400">
+                    L’adresse de ce lecteur est invalide.
                   </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openNativePlayer}
+                    disabled={openingBrowser}
+                    className="mt-6 rounded-xl bg-red-600 px-7 py-3 font-bold text-white transition hover:bg-red-500 disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {openingBrowser
+                      ? "Ouverture…"
+                      : "Regarder maintenant"}
+                  </button>
+                )}
 
-                  <div className="mt-5 flex flex-wrap justify-center gap-3">
-                    {channel?.streamUrl2 && (
-                      <button
-                        onClick={switchReader}
-                        className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
-                      >
-                        Essayer autre lecteur
-                      </button>
-                    )}
+                {channel?.streamUrl2 && (
+                  <button
+                    type="button"
+                    onClick={switchReader}
+                    className="mt-3 rounded-xl bg-zinc-800 px-6 py-3 text-sm font-semibold hover:bg-zinc-700"
+                  >
+                    Essayer le lecteur {reader === 1 ? "2" : "1"}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                {!frameError && safeUrl && (
+                  <iframe
+                    key={`${reader}-${safeUrl}`}
+                    src={safeUrl}
+                    title={`${channel.name} — Lecteur ${reader}`}
+                    className="h-full w-full border-0 bg-black"
+                    loading="eager"
+                    allowFullScreen
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                    onLoad={() => {
+                      setIsLoading(false);
+                    }}
+                    onError={() => {
+                      setFrameError(true);
+                      setIsLoading(false);
+                    }}
+                  />
+                )}
 
-                    <button
-                      onClick={onClose}
-                      className="rounded-lg bg-red-600 px-4 py-2 hover:bg-red-500"
-                    >
-                      Fermer
-                    </button>
+                {isLoading && !frameError && safeUrl && (
+                  <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80">
+                    <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
+
+                    <p className="mt-4 text-sm text-zinc-400">
+                      Chargement du lecteur…
+                    </p>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
+                )}
 
-          <div
-            style={{
-              position: "fixed",
-              left: tvCursor.x,
-              top: tvCursor.y,
-              width: "24px",
-              height: "24px",
-              borderRadius: "999px",
-              background: "white",
-              border: "2px solid black",
-              boxShadow: "0 0 24px rgba(255,255,255,0.95)",
-              transform: "translate(-50%, -50%)",
-              zIndex: 999999,
-              pointerEvents: "none",
-              transition: "none",
-            }}
-          />
-        </div>
+                {(frameError || !safeUrl) && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6 text-center">
+                    <p className="text-lg font-semibold">
+                      Lecture indisponible
+                    </p>
+
+                    <p className="mt-2 max-w-md text-sm text-zinc-400">
+                      Ce lecteur est inaccessible ou temporairement bloqué.
+                    </p>
+
+                    <div className="mt-5 flex flex-wrap justify-center gap-3">
+                      {channel?.streamUrl2 && (
+                        <button
+                          type="button"
+                          onClick={switchReader}
+                          className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
+                        >
+                          Essayer l’autre lecteur
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-lg bg-red-600 px-4 py-2 hover:bg-red-500"
+                      >
+                        Fermer
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </main>
       </div>
     </div>
   );

@@ -5,9 +5,8 @@ import {
   useState,
 } from "react";
 
-import { registerPlugin } from "@capacitor/core";
-
-const NativeBrowser = registerPlugin("NativeBrowser");
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
 
 const BLOCKED_DOMAINS = [
   "doubleclick.net",
@@ -56,6 +55,13 @@ function detectAndroidApplication() {
     ) {
       return true;
     }
+
+    if (
+      typeof Capacitor.getPlatform === "function" &&
+      Capacitor.getPlatform() === "android"
+    ) {
+      return true;
+    }
   } catch (error) {
     console.warn(
       "Détection Capacitor indisponible :",
@@ -79,7 +85,10 @@ export default function VideoPlayer({
   const openedKeyRef = useRef("");
   const onCloseRef = useRef(onClose);
 
-  const isAndroidApp = detectAndroidApplication();
+  const isAndroidApp = useMemo(
+    () => detectAndroidApplication(),
+    []
+  );
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -154,7 +163,7 @@ export default function VideoPlayer({
 
   /*
    * APPLICATION ANDROID :
-   * appel explicite de MainActivity.NativeBrowserPlugin.
+   * ouverture avec le plugin officiel Capacitor Browser.
    */
   useEffect(() => {
     if (!isAndroidApp || !safeUrl) {
@@ -171,14 +180,30 @@ export default function VideoPlayer({
     openedKeyRef.current = openingKey;
 
     let cancelled = false;
+    let finishedListener;
 
     const openNativeBrowser = async () => {
       setIsLoading(true);
       setBrowserError("");
 
       try {
-        await NativeBrowser.open({
+        finishedListener = await Browser.addListener(
+          "browserFinished",
+          () => {
+            if (!cancelled) {
+              onCloseRef.current();
+            }
+          }
+        );
+
+        if (cancelled) {
+          await finishedListener.remove();
+          return;
+        }
+
+        await Browser.open({
           url: safeUrl,
+          presentationStyle: "fullscreen",
         });
 
         if (!cancelled) {
@@ -206,6 +231,10 @@ export default function VideoPlayer({
 
     return () => {
       cancelled = true;
+
+      if (finishedListener) {
+        finishedListener.remove();
+      }
     };
   }, [
     isAndroidApp,

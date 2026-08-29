@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
 
 const BLOCKED_DOMAINS = [
   "doubleclick.net",
@@ -18,6 +26,17 @@ export default function VideoPlayer({ channel, onClose }) {
   const [reader, setReader] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [frameError, setFrameError] = useState(false);
+  const [browserError, setBrowserError] = useState("");
+  const [openAttempt, setOpenAttempt] = useState(0);
+
+  const openedUrlRef = useRef("");
+  const onCloseRef = useRef(onClose);
+
+  const isNativeApp = Capacitor.isNativePlatform();
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   const safeUrl = useMemo(() => {
     const rawUrl =
@@ -47,7 +66,11 @@ export default function VideoPlayer({ channel, onClose }) {
 
       return url.href;
     } catch (error) {
-      console.error("Adresse du lecteur invalide :", error);
+      console.error(
+        "Adresse du lecteur invalide :",
+        error
+      );
+
       return "";
     }
   }, [channel, reader]);
@@ -55,11 +78,14 @@ export default function VideoPlayer({ channel, onClose }) {
   useEffect(() => {
     if (!channel) return undefined;
 
-    const previousOverflow = document.body.style.overflow;
+    const previousOverflow =
+      document.body.style.overflow;
+
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow =
+        previousOverflow;
     };
   }, [channel]);
 
@@ -67,9 +93,91 @@ export default function VideoPlayer({ channel, onClose }) {
     setReader(1);
     setIsLoading(true);
     setFrameError(false);
+    setBrowserError("");
+    openedUrlRef.current = "";
   }, [channel]);
 
+  /*
+   * APPLICATION CAPACITOR :
+   * ouverture automatique du lecteur en Custom Tab.
+   */
   useEffect(() => {
+    if (!isNativeApp || !safeUrl) {
+      return undefined;
+    }
+
+    if (openedUrlRef.current === safeUrl) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let finishedListener;
+
+    const openCustomTab = async () => {
+      openedUrlRef.current = safeUrl;
+      setIsLoading(true);
+      setBrowserError("");
+
+      try {
+        finishedListener = await Browser.addListener(
+          "browserFinished",
+          () => {
+            if (!cancelled) {
+              onCloseRef.current();
+            }
+          }
+        );
+
+        if (cancelled) {
+          await finishedListener.remove();
+          return;
+        }
+
+        await Browser.open({
+          url: safeUrl,
+          presentationStyle: "fullscreen",
+        });
+
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error(
+          "Impossible d’ouvrir la Custom Tab :",
+          error
+        );
+
+        openedUrlRef.current = "";
+
+        if (!cancelled) {
+          setIsLoading(false);
+          setBrowserError(
+            "Impossible d’ouvrir le navigateur. Réessaie."
+          );
+        }
+      }
+    };
+
+    openCustomTab();
+
+    return () => {
+      cancelled = true;
+
+      if (finishedListener) {
+        finishedListener.remove();
+      }
+    };
+  }, [isNativeApp, safeUrl, openAttempt]);
+
+  /*
+   * SITE WEB NORMAL :
+   * gestion du chargement de l’iframe.
+   */
+  useEffect(() => {
+    if (isNativeApp) {
+      return undefined;
+    }
+
     setIsLoading(true);
     setFrameError(false);
 
@@ -85,7 +193,7 @@ export default function VideoPlayer({ channel, onClose }) {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [safeUrl]);
+  }, [safeUrl, isNativeApp]);
 
   useEffect(() => {
     if (!channel) return undefined;
@@ -104,27 +212,116 @@ export default function VideoPlayer({ channel, onClose }) {
       event.preventDefault();
       event.stopPropagation();
 
-      onClose();
+      onCloseRef.current();
     };
 
-    window.addEventListener("keydown", handleBack, true);
+    window.addEventListener(
+      "keydown",
+      handleBack,
+      true
+    );
 
     return () => {
-      window.removeEventListener("keydown", handleBack, true);
+      window.removeEventListener(
+        "keydown",
+        handleBack,
+        true
+      );
     };
-  }, [channel, onClose]);
+  }, [channel]);
 
   const switchReader = () => {
+    openedUrlRef.current = "";
+
     setReader((currentReader) =>
       currentReader === 1 ? 2 : 1
     );
 
     setIsLoading(true);
     setFrameError(false);
+    setBrowserError("");
+  };
+
+  const retryCustomTab = () => {
+    openedUrlRef.current = "";
+    setBrowserError("");
+    setOpenAttempt((current) => current + 1);
   };
 
   if (!channel) return null;
 
+  /*
+   * ÉCRAN D’ATTENTE DERRIÈRE LA CUSTOM TAB.
+   * Il n’est visible que lorsque le navigateur est fermé
+   * ou lorsqu’une erreur survient.
+   */
+  if (isNativeApp) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-6 text-white">
+        <div className="w-full max-w-md text-center">
+          {isLoading && (
+            <>
+              <div className="mx-auto h-11 w-11 animate-spin rounded-full border-2 border-white border-t-transparent" />
+
+              <p className="mt-4 text-sm text-zinc-400">
+                Ouverture du lecteur…
+              </p>
+            </>
+          )}
+
+          {browserError && (
+            <>
+              <p className="text-lg font-semibold text-red-400">
+                Ouverture impossible
+              </p>
+
+              <p className="mt-2 text-sm text-zinc-400">
+                {browserError}
+              </p>
+
+              <button
+                type="button"
+                onClick={retryCustomTab}
+                className="mt-5 rounded-xl bg-red-600 px-6 py-3 font-semibold hover:bg-red-500"
+              >
+                Réessayer
+              </button>
+            </>
+          )}
+
+          {!safeUrl && (
+            <p className="text-sm text-red-400">
+              L’adresse de ce lecteur est invalide.
+            </p>
+          )}
+
+          {channel?.streamUrl2 && (
+            <button
+              type="button"
+              onClick={switchReader}
+              className="mt-3 rounded-xl bg-zinc-800 px-6 py-3 text-sm font-semibold hover:bg-zinc-700"
+            >
+              Essayer le lecteur{" "}
+              {reader === 1 ? "2" : "1"}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-3 rounded-xl border border-white/10 px-6 py-3 text-sm font-semibold text-zinc-300 hover:bg-white/5"
+          >
+            Retour aux chaînes
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /*
+   * VERSION NAVIGATEUR WEB :
+   * lecture directe dans l’iframe.
+   */
   return (
     <div className="fixed inset-0 z-50 bg-black text-white">
       <div className="flex h-screen w-screen flex-col bg-black">

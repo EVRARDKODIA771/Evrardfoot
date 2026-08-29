@@ -5,9 +5,6 @@ import {
   useState,
 } from "react";
 
-import { Capacitor } from "@capacitor/core";
-import { Browser } from "@capacitor/browser";
-
 const BLOCKED_DOMAINS = [
   "doubleclick.net",
   "adservice.google.com",
@@ -22,54 +19,17 @@ const BLOCKED_DOMAINS = [
   "outbrain.com",
 ];
 
-function detectAndroidApplication() {
+function getAndroidBridge() {
   if (typeof window === "undefined") {
-    return false;
+    return null;
   }
 
-  /*
-   * Pont Java natif directement injecté
-   * par Capacitor sous Android.
-   */
-  if (window.androidBridge) {
-    return true;
-  }
+  const bridge = window.androidBridge;
 
-  const capacitor = window.Capacitor;
-
-  if (!capacitor) {
-    return false;
-  }
-
-  try {
-    if (
-      typeof capacitor.getPlatform === "function" &&
-      capacitor.getPlatform() === "android"
-    ) {
-      return true;
-    }
-
-    if (
-      typeof capacitor.isNativePlatform === "function" &&
-      capacitor.isNativePlatform()
-    ) {
-      return true;
-    }
-
-    if (
-      typeof Capacitor.getPlatform === "function" &&
-      Capacitor.getPlatform() === "android"
-    ) {
-      return true;
-    }
-  } catch (error) {
-    console.warn(
-      "Détection Capacitor indisponible :",
-      error
-    );
-  }
-
-  return false;
+  return bridge &&
+    typeof bridge.openExternalBrowser === "function"
+    ? bridge
+    : null;
 }
 
 export default function VideoPlayer({
@@ -85,10 +45,8 @@ export default function VideoPlayer({
   const openedKeyRef = useRef("");
   const onCloseRef = useRef(onClose);
 
-  const isAndroidApp = useMemo(
-    () => detectAndroidApplication(),
-    []
-  );
+  const androidBridge = getAndroidBridge();
+  const isAndroidApp = androidBridge !== null;
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -163,7 +121,8 @@ export default function VideoPlayer({
 
   /*
    * APPLICATION ANDROID :
-   * ouverture avec le plugin officiel Capacitor Browser.
+   * transmet l'URL au pont Java de MainActivity.
+   * Android ouvre ensuite le navigateur externe du téléphone.
    */
   useEffect(() => {
     if (!isAndroidApp || !safeUrl) {
@@ -179,36 +138,22 @@ export default function VideoPlayer({
 
     openedKeyRef.current = openingKey;
 
-    let cancelled = false;
-    let finishedListener;
-
-    const openNativeBrowser = async () => {
+    const openNativeBrowser = () => {
       setIsLoading(true);
       setBrowserError("");
 
       try {
-        finishedListener = await Browser.addListener(
-          "browserFinished",
-          () => {
-            if (!cancelled) {
-              onCloseRef.current();
-            }
-          }
+        const opened = androidBridge.openExternalBrowser(
+          safeUrl
         );
 
-        if (cancelled) {
-          await finishedListener.remove();
-          return;
+        if (opened === false) {
+          throw new Error(
+            "Aucun navigateur Android compatible."
+          );
         }
 
-        await Browser.open({
-          url: safeUrl,
-          presentationStyle: "fullscreen",
-        });
-
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       } catch (error) {
         console.error(
           "Erreur du navigateur Android :",
@@ -217,27 +162,17 @@ export default function VideoPlayer({
 
         openedKeyRef.current = "";
 
-        if (!cancelled) {
-          setIsLoading(false);
-
-          setBrowserError(
-            "Le navigateur Android n’a pas pu être ouvert."
-          );
-        }
+        setIsLoading(false);
+        setBrowserError(
+          "Le navigateur Android n’a pas pu être ouvert."
+        );
       }
     };
 
     openNativeBrowser();
-
-    return () => {
-      cancelled = true;
-
-      if (finishedListener) {
-        finishedListener.remove();
-      }
-    };
   }, [
     isAndroidApp,
+    androidBridge,
     safeUrl,
     openAttempt,
   ]);
@@ -331,7 +266,7 @@ export default function VideoPlayer({
 
   /*
    * APPLICATION ANDROID :
-   * cet écran reste derrière la Custom Tab.
+   * cet écran reste derrière le navigateur externe.
    */
   if (isAndroidApp) {
     return (

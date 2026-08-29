@@ -14,31 +14,10 @@ const BLOCKED_DOMAINS = [
   "outbrain.com",
 ];
 
-function isCapacitorNative() {
-  if (typeof window === "undefined") return false;
-
-  const capacitor = window.Capacitor;
-
-  if (!capacitor) return false;
-
-  if (typeof capacitor.isNativePlatform === "function") {
-    return capacitor.isNativePlatform();
-  }
-
-  if (typeof capacitor.getPlatform === "function") {
-    return capacitor.getPlatform() !== "web";
-  }
-
-  return Boolean(capacitor.isNative);
-}
-
 export default function VideoPlayer({ channel, onClose }) {
   const [reader, setReader] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [frameError, setFrameError] = useState(false);
-  const [openingPlayer, setOpeningPlayer] = useState(false);
-  const [playerError, setPlayerError] = useState("");
-  const [isNativeApp, setIsNativeApp] = useState(false);
 
   const safeUrl = useMemo(() => {
     const rawUrl =
@@ -74,10 +53,6 @@ export default function VideoPlayer({ channel, onClose }) {
   }, [channel, reader]);
 
   useEffect(() => {
-    setIsNativeApp(isCapacitorNative());
-  }, []);
-
-  useEffect(() => {
     if (!channel) return undefined;
 
     const previousOverflow = document.body.style.overflow;
@@ -92,16 +67,13 @@ export default function VideoPlayer({ channel, onClose }) {
     setReader(1);
     setIsLoading(true);
     setFrameError(false);
-    setOpeningPlayer(false);
-    setPlayerError("");
   }, [channel]);
 
   useEffect(() => {
     setIsLoading(true);
     setFrameError(false);
-    setPlayerError("");
 
-    if (!safeUrl || isNativeApp) {
+    if (!safeUrl) {
       setIsLoading(false);
       return undefined;
     }
@@ -113,7 +85,7 @@ export default function VideoPlayer({ channel, onClose }) {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [safeUrl, isNativeApp]);
+  }, [safeUrl]);
 
   useEffect(() => {
     if (!channel) return undefined;
@@ -149,37 +121,6 @@ export default function VideoPlayer({ channel, onClose }) {
 
     setIsLoading(true);
     setFrameError(false);
-    setOpeningPlayer(false);
-    setPlayerError("");
-  };
-
-  const openNativePlayer = () => {
-    if (!safeUrl || openingPlayer) return;
-
-    setOpeningPlayer(true);
-    setPlayerError("");
-
-    try {
-      const internalPlayerUrl =
-        `evrardfoot://player?url=${encodeURIComponent(safeUrl)}`;
-
-      window.location.href = internalPlayerUrl;
-
-      window.setTimeout(() => {
-        setOpeningPlayer(false);
-      }, 1000);
-    } catch (error) {
-      console.error(
-        "Impossible d’ouvrir le lecteur sécurisé :",
-        error
-      );
-
-      setPlayerError(
-        "Le lecteur sécurisé n’a pas pu être ouvert. Réessaie ou utilise l’autre lecteur."
-      );
-
-      setOpeningPlayer(false);
-    }
   };
 
   if (!channel) return null;
@@ -225,129 +166,67 @@ export default function VideoPlayer({ channel, onClose }) {
 
         <main className="relative flex-1 bg-black p-2 md:p-4">
           <div className="relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-black">
-            {isNativeApp ? (
-              <div className="flex h-full w-full flex-col items-center justify-center bg-black p-6 text-center">
-                <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-red-600 text-3xl">
-                  ▶
-                </div>
+            {!frameError && safeUrl && (
+              <iframe
+                key={`${reader}-${safeUrl}`}
+                src={safeUrl}
+                title={`${channel.name} — Lecteur ${reader}`}
+                className="h-full w-full border-0 bg-black"
+                loading="eager"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                onLoad={() => {
+                  setIsLoading(false);
+                }}
+                onError={() => {
+                  setFrameError(true);
+                  setIsLoading(false);
+                }}
+              />
+            )}
 
-                <h3 className="text-xl font-bold">
-                  {channel.name}
-                </h3>
+            {isLoading && !frameError && safeUrl && (
+              <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80">
+                <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
 
-                <p className="mt-3 max-w-md text-sm leading-6 text-zinc-400">
-                  La vidéo va s’ouvrir dans le lecteur sécurisé
-                  d’EvrardFoot. Les fenêtres et les redirections
-                  publicitaires externes seront bloquées.
+                <p className="mt-4 text-sm text-zinc-400">
+                  Chargement du lecteur…
+                </p>
+              </div>
+            )}
+
+            {(frameError || !safeUrl) && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6 text-center">
+                <p className="text-lg font-semibold">
+                  Lecture indisponible
                 </p>
 
-                {playerError && (
-                  <p className="mt-4 max-w-md rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-                    {playerError}
-                  </p>
-                )}
+                <p className="mt-2 max-w-md text-sm text-zinc-400">
+                  Ce lecteur est inaccessible ou temporairement
+                  bloqué.
+                </p>
 
-                {!safeUrl ? (
-                  <p className="mt-5 text-sm text-red-400">
-                    L’adresse de ce lecteur est invalide.
-                  </p>
-                ) : (
+                <div className="mt-5 flex flex-wrap justify-center gap-3">
+                  {channel?.streamUrl2 && (
+                    <button
+                      type="button"
+                      onClick={switchReader}
+                      className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
+                    >
+                      Essayer l’autre lecteur
+                    </button>
+                  )}
+
                   <button
                     type="button"
-                    onClick={openNativePlayer}
-                    disabled={openingPlayer}
-                    className="mt-6 rounded-xl bg-red-600 px-7 py-3 font-bold text-white transition hover:bg-red-500 disabled:cursor-wait disabled:opacity-60"
+                    onClick={onClose}
+                    className="rounded-lg bg-red-600 px-4 py-2 hover:bg-red-500"
                   >
-                    {openingPlayer
-                      ? "Ouverture…"
-                      : "Regarder maintenant"}
+                    Fermer
                   </button>
-                )}
-
-                {channel?.streamUrl2 && (
-                  <button
-                    type="button"
-                    onClick={switchReader}
-                    className="mt-3 rounded-xl bg-zinc-800 px-6 py-3 text-sm font-semibold hover:bg-zinc-700"
-                  >
-                    Essayer le lecteur{" "}
-                    {reader === 1 ? "2" : "1"}
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="mt-3 rounded-xl border border-white/10 bg-transparent px-6 py-3 text-sm font-semibold text-zinc-300 hover:bg-white/5"
-                >
-                  Retour aux chaînes
-                </button>
+                </div>
               </div>
-            ) : (
-              <>
-                {!frameError && safeUrl && (
-                  <iframe
-                    key={`${reader}-${safeUrl}`}
-                    src={safeUrl}
-                    title={`${channel.name} — Lecteur ${reader}`}
-                    className="h-full w-full border-0 bg-black"
-                    loading="eager"
-                    allowFullScreen
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                    onLoad={() => {
-                      setIsLoading(false);
-                    }}
-                    onError={() => {
-                      setFrameError(true);
-                      setIsLoading(false);
-                    }}
-                  />
-                )}
-
-                {isLoading && !frameError && safeUrl && (
-                  <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80">
-                    <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
-
-                    <p className="mt-4 text-sm text-zinc-400">
-                      Chargement du lecteur…
-                    </p>
-                  </div>
-                )}
-
-                {(frameError || !safeUrl) && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6 text-center">
-                    <p className="text-lg font-semibold">
-                      Lecture indisponible
-                    </p>
-
-                    <p className="mt-2 max-w-md text-sm text-zinc-400">
-                      Ce lecteur est inaccessible ou temporairement
-                      bloqué.
-                    </p>
-
-                    <div className="mt-5 flex flex-wrap justify-center gap-3">
-                      {channel?.streamUrl2 && (
-                        <button
-                          type="button"
-                          onClick={switchReader}
-                          className="rounded-lg bg-zinc-800 px-4 py-2 hover:bg-zinc-700"
-                        >
-                          Essayer l’autre lecteur
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={onClose}
-                        className="rounded-lg bg-red-600 px-4 py-2 hover:bg-red-500"
-                      >
-                        Fermer
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
             )}
           </div>
         </main>

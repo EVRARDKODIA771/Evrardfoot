@@ -5,8 +5,9 @@ import {
   useState,
 } from "react";
 
-import { Capacitor } from "@capacitor/core";
-import { Browser } from "@capacitor/browser";
+import { registerPlugin } from "@capacitor/core";
+
+const NativeBrowser = registerPlugin("NativeBrowser");
 
 const BLOCKED_DOMAINS = [
   "doubleclick.net",
@@ -22,17 +23,63 @@ const BLOCKED_DOMAINS = [
   "outbrain.com",
 ];
 
-export default function VideoPlayer({ channel, onClose }) {
+function detectAndroidApplication() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  /*
+   * Pont Java natif directement injecté
+   * par Capacitor sous Android.
+   */
+  if (window.androidBridge) {
+    return true;
+  }
+
+  const capacitor = window.Capacitor;
+
+  if (!capacitor) {
+    return false;
+  }
+
+  try {
+    if (
+      typeof capacitor.getPlatform === "function" &&
+      capacitor.getPlatform() === "android"
+    ) {
+      return true;
+    }
+
+    if (
+      typeof capacitor.isNativePlatform === "function" &&
+      capacitor.isNativePlatform()
+    ) {
+      return true;
+    }
+  } catch (error) {
+    console.warn(
+      "Détection Capacitor indisponible :",
+      error
+    );
+  }
+
+  return false;
+}
+
+export default function VideoPlayer({
+  channel,
+  onClose,
+}) {
   const [reader, setReader] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [frameError, setFrameError] = useState(false);
   const [browserError, setBrowserError] = useState("");
   const [openAttempt, setOpenAttempt] = useState(0);
 
-  const openedUrlRef = useRef("");
+  const openedKeyRef = useRef("");
   const onCloseRef = useRef(onClose);
 
-  const isNativeApp = Capacitor.isNativePlatform();
+  const isAndroidApp = detectAndroidApplication();
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -42,17 +89,21 @@ export default function VideoPlayer({ channel, onClose }) {
     const rawUrl =
       reader === 1
         ? channel?.streamUrl
-        : channel?.streamUrl2 || channel?.streamUrl;
+        : channel?.streamUrl2 ||
+          channel?.streamUrl;
 
-    if (!rawUrl) return "";
+    if (!rawUrl) {
+      return "";
+    }
 
     try {
       const url = new URL(rawUrl);
 
-      if (
-        url.protocol !== "https:" &&
-        url.protocol !== "http:"
-      ) {
+      const validProtocol =
+        url.protocol === "https:" ||
+        url.protocol === "http:";
+
+      if (!validProtocol) {
         return "";
       }
 
@@ -62,7 +113,9 @@ export default function VideoPlayer({ channel, onClose }) {
           url.hostname.endsWith(`.${domain}`)
       );
 
-      if (blocked) return "";
+      if (blocked) {
+        return "";
+      }
 
       return url.href;
     } catch (error) {
@@ -76,7 +129,9 @@ export default function VideoPlayer({ channel, onClose }) {
   }, [channel, reader]);
 
   useEffect(() => {
-    if (!channel) return undefined;
+    if (!channel) {
+      return undefined;
+    }
 
     const previousOverflow =
       document.body.style.overflow;
@@ -94,48 +149,36 @@ export default function VideoPlayer({ channel, onClose }) {
     setIsLoading(true);
     setFrameError(false);
     setBrowserError("");
-    openedUrlRef.current = "";
+    openedKeyRef.current = "";
   }, [channel]);
 
   /*
-   * APPLICATION CAPACITOR :
-   * ouverture automatique du lecteur en Custom Tab.
+   * APPLICATION ANDROID :
+   * appel explicite de MainActivity.NativeBrowserPlugin.
    */
   useEffect(() => {
-    if (!isNativeApp || !safeUrl) {
+    if (!isAndroidApp || !safeUrl) {
       return undefined;
     }
 
-    if (openedUrlRef.current === safeUrl) {
+    const openingKey =
+      `${safeUrl}:${openAttempt}`;
+
+    if (openedKeyRef.current === openingKey) {
       return undefined;
     }
+
+    openedKeyRef.current = openingKey;
 
     let cancelled = false;
-    let finishedListener;
 
-    const openCustomTab = async () => {
-      openedUrlRef.current = safeUrl;
+    const openNativeBrowser = async () => {
       setIsLoading(true);
       setBrowserError("");
 
       try {
-        finishedListener = await Browser.addListener(
-          "browserFinished",
-          () => {
-            if (!cancelled) {
-              onCloseRef.current();
-            }
-          }
-        );
-
-        if (cancelled) {
-          await finishedListener.remove();
-          return;
-        }
-
-        await Browser.open({
+        await NativeBrowser.open({
           url: safeUrl,
-          presentationStyle: "fullscreen",
         });
 
         if (!cancelled) {
@@ -143,38 +186,39 @@ export default function VideoPlayer({ channel, onClose }) {
         }
       } catch (error) {
         console.error(
-          "Impossible d’ouvrir la Custom Tab :",
+          "Erreur du navigateur Android :",
           error
         );
 
-        openedUrlRef.current = "";
+        openedKeyRef.current = "";
 
         if (!cancelled) {
           setIsLoading(false);
+
           setBrowserError(
-            "Impossible d’ouvrir le navigateur. Réessaie."
+            "Le navigateur Android n’a pas pu être ouvert."
           );
         }
       }
     };
 
-    openCustomTab();
+    openNativeBrowser();
 
     return () => {
       cancelled = true;
-
-      if (finishedListener) {
-        finishedListener.remove();
-      }
     };
-  }, [isNativeApp, safeUrl, openAttempt]);
+  }, [
+    isAndroidApp,
+    safeUrl,
+    openAttempt,
+  ]);
 
   /*
-   * SITE WEB NORMAL :
-   * gestion du chargement de l’iframe.
+   * NAVIGATEUR WEB NORMAL :
+   * chargement classique de l’iframe.
    */
   useEffect(() => {
-    if (isNativeApp) {
+    if (isAndroidApp) {
       return undefined;
     }
 
@@ -193,10 +237,12 @@ export default function VideoPlayer({ channel, onClose }) {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [safeUrl, isNativeApp]);
+  }, [safeUrl, isAndroidApp]);
 
   useEffect(() => {
-    if (!channel) return undefined;
+    if (!channel) {
+      return undefined;
+    }
 
     const handleBack = (event) => {
       const isBack =
@@ -207,7 +253,9 @@ export default function VideoPlayer({ channel, onClose }) {
         event.keyCode === 4 ||
         event.keyCode === 461;
 
-      if (!isBack) return;
+      if (!isBack) {
+        return;
+      }
 
       event.preventDefault();
       event.stopPropagation();
@@ -231,7 +279,7 @@ export default function VideoPlayer({ channel, onClose }) {
   }, [channel]);
 
   const switchReader = () => {
-    openedUrlRef.current = "";
+    openedKeyRef.current = "";
 
     setReader((currentReader) =>
       currentReader === 1 ? 2 : 1
@@ -242,20 +290,21 @@ export default function VideoPlayer({ channel, onClose }) {
     setBrowserError("");
   };
 
-  const retryCustomTab = () => {
-    openedUrlRef.current = "";
+  const retryNativeBrowser = () => {
+    openedKeyRef.current = "";
     setBrowserError("");
     setOpenAttempt((current) => current + 1);
   };
 
-  if (!channel) return null;
+  if (!channel) {
+    return null;
+  }
 
   /*
-   * ÉCRAN D’ATTENTE DERRIÈRE LA CUSTOM TAB.
-   * Il n’est visible que lorsque le navigateur est fermé
-   * ou lorsqu’une erreur survient.
+   * APPLICATION ANDROID :
+   * cet écran reste derrière la Custom Tab.
    */
-  if (isNativeApp) {
+  if (isAndroidApp) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-6 text-white">
         <div className="w-full max-w-md text-center">
@@ -266,6 +315,27 @@ export default function VideoPlayer({ channel, onClose }) {
               <p className="mt-4 text-sm text-zinc-400">
                 Ouverture du lecteur…
               </p>
+            </>
+          )}
+
+          {!isLoading && !browserError && (
+            <>
+              <p className="text-lg font-semibold">
+                Lecteur ouvert
+              </p>
+
+              <p className="mt-2 text-sm text-zinc-400">
+                La vidéo a été ouverte dans le
+                navigateur Android.
+              </p>
+
+              <button
+                type="button"
+                onClick={retryNativeBrowser}
+                className="mt-5 rounded-xl bg-red-600 px-6 py-3 font-semibold hover:bg-red-500"
+              >
+                Rouvrir le lecteur
+              </button>
             </>
           )}
 
@@ -281,7 +351,7 @@ export default function VideoPlayer({ channel, onClose }) {
 
               <button
                 type="button"
-                onClick={retryCustomTab}
+                onClick={retryNativeBrowser}
                 className="mt-5 rounded-xl bg-red-600 px-6 py-3 font-semibold hover:bg-red-500"
               >
                 Réessayer
@@ -319,8 +389,8 @@ export default function VideoPlayer({ channel, onClose }) {
   }
 
   /*
-   * VERSION NAVIGATEUR WEB :
-   * lecture directe dans l’iframe.
+   * VERSION WEB :
+   * lecture dans l’iframe.
    */
   return (
     <div className="fixed inset-0 z-50 bg-black text-white">
@@ -383,15 +453,17 @@ export default function VideoPlayer({ channel, onClose }) {
               />
             )}
 
-            {isLoading && !frameError && safeUrl && (
-              <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80">
-                <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            {isLoading &&
+              !frameError &&
+              safeUrl && (
+                <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80">
+                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
 
-                <p className="mt-4 text-sm text-zinc-400">
-                  Chargement du lecteur…
-                </p>
-              </div>
-            )}
+                  <p className="mt-4 text-sm text-zinc-400">
+                    Chargement du lecteur…
+                  </p>
+                </div>
+              )}
 
             {(frameError || !safeUrl) && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6 text-center">
@@ -400,8 +472,8 @@ export default function VideoPlayer({ channel, onClose }) {
                 </p>
 
                 <p className="mt-2 max-w-md text-sm text-zinc-400">
-                  Ce lecteur est inaccessible ou temporairement
-                  bloqué.
+                  Ce lecteur est inaccessible ou
+                  temporairement bloqué.
                 </p>
 
                 <div className="mt-5 flex flex-wrap justify-center gap-3">

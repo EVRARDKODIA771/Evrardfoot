@@ -1,52 +1,11 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-const BLOCKED_DOMAINS = [
-  "doubleclick.net",
-  "adservice.google.com",
-  "googlesyndication.com",
-  "google-analytics.com",
-  "popads.net",
-  "popcash.net",
-  "propellerads.com",
-  "adsterra.com",
-  "onclickmega.com",
-  "taboola.com",
-  "outbrain.com",
-];
-
-function getAndroidBridge() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const bridge = window.androidBridge;
-
-  return bridge &&
-    typeof bridge.openExternalBrowser === "function"
-    ? bridge
-    : null;
-}
-
-export default function VideoPlayer({
-  channel,
-  onClose,
-}) {
+export default function VideoPlayer({ channel, onClose }) {
   const [reader, setReader] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [frameError, setFrameError] = useState(false);
-  const [browserError, setBrowserError] = useState("");
-  const [openAttempt, setOpenAttempt] = useState(0);
 
-  const openedKeyRef = useRef("");
   const onCloseRef = useRef(onClose);
-
-  const androidBridge = getAndroidBridge();
-  const isAndroidApp = androidBridge !== null;
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -56,8 +15,7 @@ export default function VideoPlayer({
     const rawUrl =
       reader === 1
         ? channel?.streamUrl
-        : channel?.streamUrl2 ||
-          channel?.streamUrl;
+        : channel?.streamUrl2 || channel?.streamUrl;
 
     if (!rawUrl) {
       return "";
@@ -66,31 +24,13 @@ export default function VideoPlayer({
     try {
       const url = new URL(rawUrl);
 
-      const validProtocol =
-        url.protocol === "https:" ||
-        url.protocol === "http:";
-
-      if (!validProtocol) {
-        return "";
-      }
-
-      const blocked = BLOCKED_DOMAINS.some(
-        (domain) =>
-          url.hostname === domain ||
-          url.hostname.endsWith(`.${domain}`)
-      );
-
-      if (blocked) {
+      if (url.protocol !== "https:" && url.protocol !== "http:") {
         return "";
       }
 
       return url.href;
     } catch (error) {
-      console.error(
-        "Adresse du lecteur invalide :",
-        error
-      );
-
+      console.error("Adresse du lecteur invalide :", error);
       return "";
     }
   }, [channel, reader]);
@@ -100,14 +40,11 @@ export default function VideoPlayer({
       return undefined;
     }
 
-    const previousOverflow =
-      document.body.style.overflow;
-
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow =
-        previousOverflow;
+      document.body.style.overflow = previousOverflow;
     };
   }, [channel]);
 
@@ -115,77 +52,9 @@ export default function VideoPlayer({
     setReader(1);
     setIsLoading(true);
     setFrameError(false);
-    setBrowserError("");
-    openedKeyRef.current = "";
   }, [channel]);
 
-  /*
-   * APPLICATION ANDROID :
-   * transmet l'URL au pont Java de MainActivity.
-   * Android ouvre ensuite le navigateur externe du téléphone.
-   */
   useEffect(() => {
-    if (!isAndroidApp || !safeUrl) {
-      return undefined;
-    }
-
-    const openingKey =
-      `${safeUrl}:${openAttempt}`;
-
-    if (openedKeyRef.current === openingKey) {
-      return undefined;
-    }
-
-    openedKeyRef.current = openingKey;
-
-    const openNativeBrowser = () => {
-      setIsLoading(true);
-      setBrowserError("");
-
-      try {
-        const opened = androidBridge.openExternalBrowser(
-          safeUrl
-        );
-
-        if (opened === false) {
-          throw new Error(
-            "Aucun navigateur Android compatible."
-          );
-        }
-
-        setIsLoading(false);
-      } catch (error) {
-        console.error(
-          "Erreur du navigateur Android :",
-          error
-        );
-
-        openedKeyRef.current = "";
-
-        setIsLoading(false);
-        setBrowserError(
-          "Le navigateur Android n’a pas pu être ouvert."
-        );
-      }
-    };
-
-    openNativeBrowser();
-  }, [
-    isAndroidApp,
-    androidBridge,
-    safeUrl,
-    openAttempt,
-  ]);
-
-  /*
-   * NAVIGATEUR WEB NORMAL :
-   * chargement classique de l’iframe.
-   */
-  useEffect(() => {
-    if (isAndroidApp) {
-      return undefined;
-    }
-
     setIsLoading(true);
     setFrameError(false);
 
@@ -201,7 +70,7 @@ export default function VideoPlayer({
     return () => {
       window.clearTimeout(timer);
     };
-  }, [safeUrl, isAndroidApp]);
+  }, [safeUrl]);
 
   useEffect(() => {
     if (!channel) {
@@ -223,139 +92,26 @@ export default function VideoPlayer({
 
       event.preventDefault();
       event.stopPropagation();
-
       onCloseRef.current();
     };
 
-    window.addEventListener(
-      "keydown",
-      handleBack,
-      true
-    );
+    window.addEventListener("keydown", handleBack, true);
 
     return () => {
-      window.removeEventListener(
-        "keydown",
-        handleBack,
-        true
-      );
+      window.removeEventListener("keydown", handleBack, true);
     };
   }, [channel]);
 
   const switchReader = () => {
-    openedKeyRef.current = "";
-
-    setReader((currentReader) =>
-      currentReader === 1 ? 2 : 1
-    );
-
+    setReader((currentReader) => (currentReader === 1 ? 2 : 1));
     setIsLoading(true);
     setFrameError(false);
-    setBrowserError("");
-  };
-
-  const retryNativeBrowser = () => {
-    openedKeyRef.current = "";
-    setBrowserError("");
-    setOpenAttempt((current) => current + 1);
   };
 
   if (!channel) {
     return null;
   }
 
-  /*
-   * APPLICATION ANDROID :
-   * cet écran reste derrière le navigateur externe.
-   */
-  if (isAndroidApp) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-6 text-white">
-        <div className="w-full max-w-md text-center">
-          {isLoading && (
-            <>
-              <div className="mx-auto h-11 w-11 animate-spin rounded-full border-2 border-white border-t-transparent" />
-
-              <p className="mt-4 text-sm text-zinc-400">
-                Ouverture du lecteur…
-              </p>
-            </>
-          )}
-
-          {!isLoading && !browserError && (
-            <>
-              <p className="text-lg font-semibold">
-                Lecteur ouvert
-              </p>
-
-              <p className="mt-2 text-sm text-zinc-400">
-                La vidéo a été ouverte dans le
-                navigateur Android.
-              </p>
-
-              <button
-                type="button"
-                onClick={retryNativeBrowser}
-                className="mt-5 rounded-xl bg-red-600 px-6 py-3 font-semibold hover:bg-red-500"
-              >
-                Rouvrir le lecteur
-              </button>
-            </>
-          )}
-
-          {browserError && (
-            <>
-              <p className="text-lg font-semibold text-red-400">
-                Ouverture impossible
-              </p>
-
-              <p className="mt-2 text-sm text-zinc-400">
-                {browserError}
-              </p>
-
-              <button
-                type="button"
-                onClick={retryNativeBrowser}
-                className="mt-5 rounded-xl bg-red-600 px-6 py-3 font-semibold hover:bg-red-500"
-              >
-                Réessayer
-              </button>
-            </>
-          )}
-
-          {!safeUrl && (
-            <p className="text-sm text-red-400">
-              L’adresse de ce lecteur est invalide.
-            </p>
-          )}
-
-          {channel?.streamUrl2 && (
-            <button
-              type="button"
-              onClick={switchReader}
-              className="mt-3 rounded-xl bg-zinc-800 px-6 py-3 text-sm font-semibold hover:bg-zinc-700"
-            >
-              Essayer le lecteur{" "}
-              {reader === 1 ? "2" : "1"}
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="mt-3 rounded-xl border border-white/10 px-6 py-3 text-sm font-semibold text-zinc-300 hover:bg-white/5"
-          >
-            Retour aux chaînes
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /*
-   * VERSION WEB :
-   * lecture dans l’iframe.
-   */
   return (
     <div className="fixed inset-0 z-50 bg-black text-white">
       <div className="flex h-screen w-screen flex-col bg-black">
@@ -378,9 +134,7 @@ export default function VideoPlayer({
                   onClick={switchReader}
                   className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold hover:bg-zinc-700"
                 >
-                  {reader === 1
-                    ? "Lecteur 2"
-                    : "Lecteur 1"}
+                  {reader === 1 ? "Lecteur 2" : "Lecteur 1"}
                 </button>
               )}
 
@@ -417,27 +171,22 @@ export default function VideoPlayer({
               />
             )}
 
-            {isLoading &&
-              !frameError &&
-              safeUrl && (
-                <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80">
-                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            {isLoading && !frameError && safeUrl && (
+              <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80">
+                <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" />
 
-                  <p className="mt-4 text-sm text-zinc-400">
-                    Chargement du lecteur…
-                  </p>
-                </div>
-              )}
+                <p className="mt-4 text-sm text-zinc-400">
+                  Chargement du lecteur…
+                </p>
+              </div>
+            )}
 
             {(frameError || !safeUrl) && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-6 text-center">
-                <p className="text-lg font-semibold">
-                  Lecture indisponible
-                </p>
+                <p className="text-lg font-semibold">Lecture indisponible</p>
 
                 <p className="mt-2 max-w-md text-sm text-zinc-400">
-                  Ce lecteur est inaccessible ou
-                  temporairement bloqué.
+                  Ce lecteur est inaccessible ou temporairement bloqué.
                 </p>
 
                 <div className="mt-5 flex flex-wrap justify-center gap-3">
